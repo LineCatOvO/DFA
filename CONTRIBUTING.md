@@ -132,6 +132,46 @@ cd dfa
 ./gradlew build
 ```
 
+### Gradle Wrapper
+
+本项目使用 Gradle Wrapper，无需预先安装 Gradle。
+
+**Unix/macOS:**
+```bash
+./gradlew <task>
+```
+
+**Windows:**
+```cmd
+gradlew.bat <task>
+```
+
+**常用命令:**
+```bash
+# 构建项目
+./gradlew build
+
+# 清理构建
+./gradlew clean
+
+# 运行测试
+./gradlew test
+
+# 运行 lint 检查
+./gradlew lint
+
+# 运行 Detekt 检查
+./gradlew detekt
+
+# 查看所有任务
+./gradlew tasks
+```
+
+**更新 Gradle Wrapper:**
+```bash
+./gradlew wrapper --gradle-version=8.6
+```
+
 ### IDE 配置
 
 推荐使用 Android Studio：

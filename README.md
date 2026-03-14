@@ -1,201 +1,153 @@
 # DFA - Docker For Android
 
-<div align="center">
+一个用于在Android设备上管理Docker容器的应用程序。
 
-![DFA Logo](docs/assets/logo.png)
+## 项目概述
 
-**基于 Android Virtualization Framework 的 Docker 容器解决方案**
+DFA是一个Android应用，允许用户在移动设备上管理和监控Docker容器。通过集成虚拟机技术和Docker API，提供完整的容器管理功能。
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Android](https://img.shields.io/badge/Android-13%2B-green.svg)](https://www.android.com/)
-[![Docker](https://img.shields.io/badge/Docker-24.0%2B-blue.svg)](https://www.docker.com/)
+## 技术栈
 
-[快速开始](#快速开始) • [文档](#文档导航) • [贡献指南](CONTRIBUTING.md) • [常见问题](docs/FAQ.md)
+- **开发语言**: Kotlin
+- **最低SDK**: API 33 (Android 13)
+- **目标SDK**: API 34 (Android 14)
+- **UI框架**: Jetpack Compose
+- **构建工具**: Gradle 8.x + KTS
+- **依赖注入**: Hilt
+- **架构模式**: MVVM + Clean Architecture
 
-</div>
+## 项目结构
 
----
-
-## 项目简介
-
-DFA（Docker For Android）是一个创新性的开源项目，利用 Android 的 AVF（Android Virtualization Framework）框架，在 Android 设备上实现原生 Docker 容器支持。
-
-### 核心特性
-
-- **原生 Docker 支持**：在 Android 设备上运行完整的 Docker 容器
-- **AVF 架构**：基于 Android 虚拟化框架，提供安全隔离的容器环境
-- **图形界面**：提供直观的 Android GUI 应用，方便容器管理
-- **终端访问**：支持通过终端直接操作 Docker 命令
-- **安全隔离**：利用虚拟化技术实现容器与宿主系统的安全隔离
-- **轻量高效**：优化的资源使用，适合移动设备运行
-
-### 项目目标
-
-```mermaid
-mindmap
-  root((DFA))
-    核心功能
-      Docker容器运行
-      容器管理
-      镜像管理
-    用户体验
-      GUI界面
-      终端支持
-      Web控制台
-    技术架构
-      AVF虚拟化
-      安全隔离
-      资源优化
-    应用场景
-      开发测试
-      CI/CD流水线
-      边缘计算
+```
+DFA/
+├── app/                          # 主应用模块
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/dfa/
+│   │   │   │   ├── MainActivity.kt
+│   │   │   │   ├── DfaApplication.kt
+│   │   │   │   └── ui/
+│   │   │   ├── res/
+│   │   │   └── AndroidManifest.xml
+│   │   └── test/
+│   └── build.gradle.kts
+├── core/                         # 核心模块
+│   ├── vm/                       # 虚拟机管理
+│   ├── docker/                   # Docker集成
+│   └── common/                   # 公共组件
+├── build.gradle.kts              # 根构建文件
+├── settings.gradle.kts           # 项目设置
+├── gradle.properties             # Gradle配置
+└── gradle/                       # Gradle wrapper
+    └── libs.versions.toml        # 版本目录
 ```
 
----
+## 开发环境搭建
 
-## 快速开始
+### 前置要求
 
-### 系统要求
+- **JDK**: 17 或更高版本
+- **Android Studio**: Hedgehog (2023.1.1) 或更高版本
+- **Android SDK**: API 34
+- **Gradle**: 8.x (通过Gradle Wrapper自动管理)
 
-| 要求 | 说明 |
-|------|------|
-| Android 版本 | Android 13 (API 33) 或更高 |
-| 设备架构 | ARM64 (aarch64) |
-| 内核支持 | 需要 KVM 和相关虚拟化支持 |
-| 存储空间 | 至少 2GB 可用空间 |
-| 内存 | 建议 4GB 以上 |
+### 环境配置步骤
 
-### 安装步骤
-
-1. **下载 APK**
+1. **安装JDK 17**
    ```bash
-   # 从 GitHub Releases 下载最新版本
-   wget https://github.com/your-org/dfa/releases/latest/dfa.apk
+   # macOS (使用Homebrew)
+   brew install openjdk@17
+   
+   # Ubuntu/Debian
+   sudo apt install openjdk-17-jdk
+   
+   # 验证安装
+   java -version
    ```
 
-2. **安装应用**
+2. **安装Android Studio**
+   - 从 [Android Studio官网](https://developer.android.com/studio) 下载最新版本
+   - 安装后打开Android Studio，完成初始设置
+   - 在SDK Manager中安装SDK 34
+
+3. **配置环境变量**
    ```bash
-   adb install dfa.apk
+   # 添加到 ~/.bashrc 或 ~/.zshrc
+   export ANDROID_HOME=$HOME/Android/Sdk
+   export PATH=$PATH:$ANDROID_HOME/emulator
+   export PATH=$PATH:$ANDROID_HOME/platform-tools
+   export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
    ```
 
-3. **初始化环境**
+4. **克隆项目**
    ```bash
-   # 打开应用，按照向导完成初始化
-   # 或通过命令行初始化
-   dfa init
+   git clone <repository-url>
+   cd DFA
    ```
 
-4. **验证安装**
-   ```bash
-   dfa version
-   dfa docker --version
-   ```
+5. **同步项目**
+   - 打开Android Studio
+   - 选择 "Open an Existing Project"
+   - 选择DFA项目目录
+   - 等待Gradle同步完成
 
-### 快速示例
+### 构建项目
 
 ```bash
-# 运行第一个容器
-dfa docker run hello-world
+# 调试版本
+./gradlew assembleDebug
 
-# 运行 Nginx 服务
-dfa docker run -d -p 8080:80 nginx
+# 发布版本
+./gradlew assembleRelease
 
-# 查看运行中的容器
-dfa docker ps
+# 运行测试
+./gradlew test
+
+# 代码检查
+./gradlew detekt
 ```
 
----
+## 主要依赖
 
-## 架构概述
+| 依赖 | 版本 | 用途 |
+|------|------|------|
+| Jetpack Compose | BOM 2024.02.00 | UI框架 |
+| Hilt | 2.50 | 依赖注入 |
+| Coroutines | 1.7.3 | 异步处理 |
+| Room | 2.6.1 | 本地数据库 |
+| Retrofit | 2.9.0 | 网络请求 |
+| Navigation Compose | 2.7.7 | 导航组件 |
 
-```mermaid
-graph TB
-    subgraph "Android 系统"
-        A[DFA App] --> B[AVF Manager]
-        B --> C[Virtual Machine]
-        C --> D[Docker Engine]
-        D --> E[Containers]
-    end
-    
-    subgraph "用户交互"
-        F[GUI 界面] --> A
-        G[终端 CLI] --> A
-        H[Web 控制台] --> A
-    end
-    
-    subgraph "存储层"
-        I[镜像存储]
-        J[容器数据]
-        K[配置文件]
-    end
-    
-    E --> I
-    E --> J
-    A --> K
+## 代码规范
+
+项目使用以下工具确保代码质量：
+
+- **Detekt**: Kotlin静态代码分析
+- **EditorConfig**: 编辑器配置统一
+
+运行代码检查：
+```bash
+./gradlew detekt
 ```
 
-### 核心组件
+## 模块说明
 
-| 组件 | 说明 |
-|------|------|
-| DFA App | Android 应用，提供用户界面和核心功能 |
-| AVF Manager | 管理 Android Virtualization Framework 的虚拟机 |
-| Docker Engine | 在虚拟机中运行的 Docker 引擎 |
-| Container Runtime | 容器运行时环境 |
+### app模块
+主应用模块，包含UI层和应用入口。
 
----
+### core:vm模块
+虚拟机管理模块，负责虚拟机的创建、配置和生命周期管理。
 
-## 文档导航
+### core:docker模块
+Docker集成模块，提供Docker API的封装和容器操作功能。
 
-| 文档 | 说明 |
-|------|------|
-| [架构文档](docs/ARCHITECTURE.md) | 详细的技术架构说明 |
-| [安装指南](docs/INSTALLATION.md) | 完整的安装和配置指南 |
-| [开发指南](docs/DEVELOPMENT.md) | 开发者贡献指南 |
-| [AVF 指南](docs/AVF-GUIDE.md) | Android Virtualization Framework 使用指南 |
-| [Docker 集成](docs/DOCKER-INTEGRATION.md) | Docker 与 AVF 的集成说明 |
-| [故障排除](docs/TROUBLESHOOTING.md) | 常见问题和解决方案 |
-| [FAQ](docs/FAQ.md) | 常见问题解答 |
-| [API 参考](docs/API-REFERENCE.md) | API 接口文档 |
-| [设备支持](docs/DEVICE-SUPPORT.md) | 支持的设备列表 |
-| [性能指南](docs/PERFORMANCE.md) | 性能优化建议 |
-| [安全指南](docs/SECURITY.md) | 安全最佳实践 |
-| [路线图](docs/ROADMAP.md) | 项目发展规划 |
-
----
-
-## 贡献指南
-
-我们欢迎所有形式的贡献！请参阅 [贡献指南](CONTRIBUTING.md) 了解如何参与项目开发。
-
-### 贡献方式
-
-- 报告 Bug 或提出功能建议
-- 提交代码改进
-- 完善文档
-- 分享使用经验
-
----
+### core:common模块
+公共组件模块，包含工具类、扩展函数和通用组件。
 
 ## 许可证
 
-本项目采用 Apache License 2.0 许可证。详见 [LICENSE](LICENSE) 文件。
+[待定]
 
----
+## 贡献指南
 
-## 致谢
-
-- [Android Virtualization Framework](https://source.android.com/docs/core/virtualization) - 提供底层虚拟化支持
-- [Docker](https://www.docker.com/) - 容器运行时
-- [所有贡献者](https://github.com/your-org/dfa/graphs/contributors) - 感谢每一位贡献者
-
----
-
-<div align="center">
-
-**[⬆ 返回顶部](#dfa---docker-for-android)**
-
-Made with ❤️ by DFA Team
-
-</div>
+[待定]

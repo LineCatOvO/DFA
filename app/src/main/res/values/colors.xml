@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="dfa_primary">#2196F3</color>
+    <color name="dfa_primary_dark">#1976D2</color>
+    <color name="dfa_secondary">#03DAC6</color>
+    <color name="dfa_background">#FAFAFA</color>
+    <color name="dfa_surface">#FFFFFF</color>
+    <color name="dfa_error">#B00020</color>
+</resources>
