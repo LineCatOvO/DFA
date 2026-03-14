@@ -1,5 +1,6 @@
 package com.dfa.core.vm.di
 
+import android.content.Context
 import com.dfa.core.vm.VmManager
 import com.dfa.core.vm.VmManagerImpl
 import com.dfa.core.vm.avf.AvfVmAdapter
@@ -26,10 +27,30 @@ import com.dfa.core.vm.protocol.MessageCodec
 import com.dfa.core.vm.protocol.MessageCodecImpl
 import com.dfa.core.vm.repository.VmRepository
 import com.dfa.core.vm.repository.VmRepositoryImpl
+import com.dfa.core.vm.storage.DiskImageManager
+import com.dfa.core.vm.storage.DiskImageManagerImpl
+import com.dfa.core.vm.storage.EncryptionManager
+import com.dfa.core.vm.storage.EncryptionManagerImpl
+import com.dfa.core.vm.storage.PersistenceManager
+import com.dfa.core.vm.storage.PersistenceManagerImpl
+import com.dfa.core.vm.storage.QuotaManager
+import com.dfa.core.vm.storage.QuotaManagerImpl
+import com.dfa.core.vm.storage.SafStorageProvider
+import com.dfa.core.vm.storage.SafStorageProviderImpl
+import com.dfa.core.vm.storage.StorageConfigProvider
+import com.dfa.core.vm.storage.StorageManager
+import com.dfa.core.vm.storage.StorageManagerImpl
+import com.dfa.core.vm.storage.crypto.AesCipher
+import com.dfa.core.vm.storage.crypto.KeyManager
+import com.dfa.core.vm.storage.crypto.SecureRandomProvider
+import com.dfa.core.vm.storage.image.ImageFormatDetector
+import com.dfa.core.vm.storage.image.Qcow2Handler
+import com.dfa.core.vm.storage.image.RawImageHandler
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -117,6 +138,55 @@ abstract class VmModule {
     @Singleton
     abstract fun bindVsockChannel(impl: VsockChannelImpl): VsockChannel
 
+    /**
+     * 绑定StorageManager接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindStorageManager(impl: StorageManagerImpl): StorageManager
+
+    /**
+     * 绑定DiskImageManager接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindDiskImageManager(impl: DiskImageManagerImpl): DiskImageManager
+
+    /**
+     * 绑定EncryptionManager接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindEncryptionManager(impl: EncryptionManagerImpl): EncryptionManager
+
+    /**
+     * 绑定QuotaManager接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindQuotaManager(impl: QuotaManagerImpl): QuotaManager
+
+    /**
+     * 绑定PersistenceManager接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindPersistenceManager(impl: PersistenceManagerImpl): PersistenceManager
+
+    /**
+     * 绑定SafStorageProvider接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindSafStorageProvider(impl: SafStorageProviderImpl): SafStorageProvider
+
+    /**
+     * 绑定StorageConfigProvider接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindStorageConfigProvider(impl: StorageManagerImpl): StorageConfigProvider
+
     companion object {
         /**
          * 提供ImageDownloaderConfig配置
@@ -145,6 +215,141 @@ abstract class VmModule {
             communicationManager: CommunicationManager
         ): FileTransferManager {
             return FileTransferManagerImpl(communicationManager)
+        }
+
+        /**
+         * 提供SecureRandomProvider实例
+         */
+        @Provides
+        @Singleton
+        fun provideSecureRandomProvider(): SecureRandomProvider {
+            return SecureRandomProvider()
+        }
+
+        /**
+         * 提供AesCipher实例
+         */
+        @Provides
+        @Singleton
+        fun provideAesCipher(
+            secureRandomProvider: SecureRandomProvider
+        ): AesCipher {
+            return AesCipher(secureRandomProvider)
+        }
+
+        /**
+         * 提供KeyManager实例
+         */
+        @Provides
+        @Singleton
+        fun provideKeyManager(
+            secureRandomProvider: SecureRandomProvider
+        ): KeyManager {
+            return KeyManager(secureRandomProvider)
+        }
+
+        /**
+         * 提供ImageFormatDetector实例
+         */
+        @Provides
+        @Singleton
+        fun provideImageFormatDetector(): ImageFormatDetector {
+            return ImageFormatDetector()
+        }
+
+        /**
+         * 提供Qcow2Handler实例
+         */
+        @Provides
+        @Singleton
+        fun provideQcow2Handler(): Qcow2Handler {
+            return Qcow2Handler()
+        }
+
+        /**
+         * 提供RawImageHandler实例
+         */
+        @Provides
+        @Singleton
+        fun provideRawImageHandler(): RawImageHandler {
+            return RawImageHandler()
+        }
+
+        /**
+         * 提供DiskImageManagerImpl实例
+         */
+        @Provides
+        @Singleton
+        fun provideDiskImageManagerImpl(
+            qcow2Handler: Qcow2Handler,
+            rawImageHandler: RawImageHandler,
+            imageFormatDetector: ImageFormatDetector,
+            storageConfigProvider: StorageConfigProvider
+        ): DiskImageManagerImpl {
+            return DiskImageManagerImpl(
+                qcow2Handler = qcow2Handler,
+                rawImageHandler = rawImageHandler,
+                imageFormatDetector = imageFormatDetector,
+                storageConfig = storageConfigProvider
+            )
+        }
+
+        /**
+         * 提供EncryptionManagerImpl实例
+         */
+        @Provides
+        @Singleton
+        fun provideEncryptionManagerImpl(
+            keyManager: KeyManager,
+            aesCipher: AesCipher
+        ): EncryptionManagerImpl {
+            return EncryptionManagerImpl(
+                keyManager = keyManager,
+                aesCipher = aesCipher
+            )
+        }
+
+        /**
+         * 提供PersistenceManagerImpl实例
+         */
+        @Provides
+        @Singleton
+        fun providePersistenceManagerImpl(
+            encryptionManager: EncryptionManager
+        ): PersistenceManagerImpl {
+            return PersistenceManagerImpl(encryptionManager)
+        }
+
+        /**
+         * 提供SafStorageProviderImpl实例
+         */
+        @Provides
+        @Singleton
+        fun provideSafStorageProviderImpl(
+            @ApplicationContext context: Context
+        ): SafStorageProviderImpl {
+            return SafStorageProviderImpl(context)
+        }
+
+        /**
+         * 提供StorageManagerImpl实例
+         */
+        @Provides
+        @Singleton
+        fun provideStorageManagerImpl(
+            diskImageManager: DiskImageManager,
+            encryptionManager: EncryptionManager,
+            quotaManager: QuotaManager,
+            persistenceManager: PersistenceManager,
+            safStorageProvider: SafStorageProvider
+        ): StorageManagerImpl {
+            return StorageManagerImpl(
+                diskImageManager = diskImageManager,
+                encryptionManager = encryptionManager,
+                quotaManager = quotaManager,
+                persistenceManager = persistenceManager,
+                safStorageProvider = safStorageProvider
+            )
         }
     }
 }
