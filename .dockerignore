@@ -1,0 +1,87 @@
+# DFA Docker Ignore File
+# Exclude files not needed in Docker build context
+
+# Build outputs
+**/build/
+**/.gradle/
+**/out/
+**/target/
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+*.log
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Documentation
+*.md
+docs/
+LICENSE
+CONTRIBUTING.md
+CHANGELOG.md
+
+# Test outputs
+**/test-results/
+**/test-reports/
+**/*.test
+
+# Local config
+local.properties
+*.local
+.env
+.env.*
+
+# Secrets
+*.jks
+*.keystore
+secrets/
+credentials/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+
+# Node modules (if any web components)
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+ENV/
+
+# Docker
+docker-compose*.yml
+.docker/
+
+# Misc
+*.apk
+*.aab
+*.jar
+*.war
+*.ear

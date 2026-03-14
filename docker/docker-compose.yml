@@ -1,0 +1,83 @@
+# DFA Docker Compose Configuration
+# For local development and testing
+
+version: '3.8'
+
+services:
+  android-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dfa-android-builder:latest
+    container_name: dfa-builder
+    volumes:
+      - ..:/workspace
+      - gradle-cache:/root/.gradle
+      - android-sdk-cache:/opt/android-sdk
+    working_dir: /workspace
+    environment:
+      - GRADLE_OPTS=-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true
+      - JAVA_OPTS=-Xmx4g
+    command: ./gradlew assembleDebug
+    networks:
+      - dfa-network
+
+  android-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dfa-android-builder:latest
+    container_name: dfa-test
+    volumes:
+      - ..:/workspace
+      - gradle-cache:/root/.gradle
+      - android-sdk-cache:/opt/android-sdk
+    working_dir: /workspace
+    environment:
+      - GRADLE_OPTS=-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true
+    command: ./gradlew testDebugUnitTest
+    networks:
+      - dfa-network
+    depends_on:
+      - android-builder
+
+  android-lint:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dfa-android-builder:latest
+    container_name: dfa-lint
+    volumes:
+      - ..:/workspace
+      - gradle-cache:/root/.gradle
+      - android-sdk-cache:/opt/android-sdk
+    working_dir: /workspace
+    environment:
+      - GRADLE_OPTS=-Dorg.gradle.daemon=false
+    command: ./gradlew detekt lint
+    networks:
+      - dfa-network
+
+  android-clean:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dfa-android-builder:latest
+    container_name: dfa-clean
+    volumes:
+      - ..:/workspace
+    working_dir: /workspace
+    command: ./gradlew clean
+    networks:
+      - dfa-network
+
+volumes:
+  gradle-cache:
+    name: dfa-gradle-cache
+  android-sdk-cache:
+    name: dfa-android-sdk-cache
+
+networks:
+  dfa-network:
+    name: dfa-network
+    driver: bridge

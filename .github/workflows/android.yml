@@ -1,7 +1,7 @@
-# DFA Android CI/CD Pipeline
-# This workflow builds, tests, and validates the Android application
+# DFA Android CI/CD Pipeline with Docker
+# This workflow builds, tests, and validates the Android application using Docker containers
 
-name: Android CI
+name: Android CI (Docker)
 
 on:
   push:
@@ -17,33 +17,23 @@ on:
 
 env:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
-  JAVA_VERSION: '17'
-  JAVA_DISTRIBUTION: 'temurin'
+  DOCKER_IMAGE: ghcr.io/${{ github.repository_owner }}/dfa-android-builder
+  DOCKER_TAG: latest
 
 jobs:
-  # ===========================================
-  # Code Quality Check
-  # ===========================================
   lint:
     name: Lint & Code Quality
     runs-on: ubuntu-latest
+    container:
+      image: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
-          gradle-home-cache-cleanup: true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -65,28 +55,18 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-  # ===========================================
-  # Build
-  # ===========================================
   build:
     name: Build
     runs-on: ubuntu-latest
     needs: lint
+    container:
+      image: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
-          gradle-home-cache-cleanup: true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -113,28 +93,18 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-  # ===========================================
-  # Unit Tests
-  # ===========================================
   unit-test:
     name: Unit Tests
     runs-on: ubuntu-latest
     needs: build
+    container:
+      image: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          cache-read-only: true
-          gradle-home-cache-cleanup: true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -165,14 +135,16 @@ jobs:
           flags: unittests
           fail_ci_if_error: false
 
-  # ===========================================
-  # Android Instrumented Tests (optional)
-  # ===========================================
   instrumented-test:
     name: Instrumented Tests
     runs-on: ubuntu-latest
     needs: build
     if: github.event_name == 'pull_request'
+    container:
+      image: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       matrix:
         api-level: [29, 33]
@@ -180,18 +152,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          cache-read-only: true
-          gradle-home-cache-cleanup: true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -245,28 +205,19 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-  # ===========================================
-  # Release Build (on main/master push)
-  # ===========================================
   release:
     name: Release Build
     runs-on: ubuntu-latest
     needs: [build, unit-test]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    container:
+      image: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-home-cache-cleanup: true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -290,9 +241,6 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
-  # ===========================================
-  # Dependency Review (on PRs)
-  # ===========================================
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
