@@ -18,6 +18,10 @@ detekt {
     parallel = true
 }
 
+dependencies {
+    detektPlugins(libs.detekt.formatting)
+}
+
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
     reports {
         html.required.set(true)
@@ -25,6 +29,11 @@ tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
         txt.required.set(false)
         sarif.required.set(false)
     }
+    jvmTarget = "17"
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.DetektCreateBaselineTask>().configureEach {
+    jvmTarget = "17"
 }
 
 tasks.register("clean", Delete::class) {

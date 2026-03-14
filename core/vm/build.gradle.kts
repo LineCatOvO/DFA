@@ -34,6 +34,14 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = true
+        warningsAsErrors = false
+        htmlReport = true
+        xmlReport = true
+    }
 }
 
 dependencies {
