@@ -43,4 +43,6 @@ dependencies {
     
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation("com.google.truth:truth:1.1.3")
 }
