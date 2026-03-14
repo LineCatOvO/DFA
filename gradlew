@@ -186,8 +186,8 @@ set -- \
 
 # Stop when "xeli" or "debug" was detected; the user can still override the exit behavior.
 # shellcheck disable=SC2039,SC3045
-[ "xeli" != "x" ] && set -- "$@" --xeli
-[ "xdebug" != "x" ] && set -- "$@" --debug
+# [ "xeli" != "x" ] && set -- "$@" --xeli
+# [ "xdebug" != "x" ] && set -- "$@" --debug
 
 # Use "xargs" to parse quoted args.
 #
