@@ -2,6 +2,7 @@ package com.dfa.core.vm.storage
 
 import android.content.ContentResolver
 import android.content.Context
+import android.content.Intent
 import android.database.ContentObserver
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -629,6 +630,3 @@ class SafStorageProviderImpl @Inject constructor(
         )
     }
 }
-
-// 需要导入Intent
-import android.content.Intent
