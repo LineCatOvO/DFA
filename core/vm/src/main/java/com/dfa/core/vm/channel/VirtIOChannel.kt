@@ -85,7 +85,7 @@ enum class FlowControl {
 /**
  * VirtIO通道配置
  */
-data class VirtIOChannelConfig(
+class VirtIOChannelConfig(
     override val type: ChannelType = ChannelType.VIRTIO_SERIAL,
     override val port: Int = 0,
     override val path: String,

@@ -113,9 +113,9 @@ class VmManagerImpl @Inject constructor(
             
             val result = avfAdapter.startVm(handle)
             if (result.isSuccess) {
-                result.getOrThrow()
+                Result.success(result.getOrThrow())
             } else {
-                return@executeOperation Result.failure(
+                Result.failure(
                     result.exceptionOrNull() ?: VmError.UnknownError("Start failed")
                 )
             }
@@ -130,11 +130,12 @@ class VmManagerImpl @Inject constructor(
             
             val result = avfAdapter.stopVm(handle, force)
             if (result.isSuccess) {
-                getCurrentInfo() ?: return@executeOperation Result.failure(
+                val info = getCurrentInfo() ?: return@executeOperation Result.failure(
                     VmError.UnknownError("Failed to get VM info after stop")
                 )
+                Result.success(info)
             } else {
-                return@executeOperation Result.failure(
+                Result.failure(
                     result.exceptionOrNull() ?: VmError.UnknownError("Stop failed")
                 )
             }
@@ -149,11 +150,12 @@ class VmManagerImpl @Inject constructor(
             
             val result = avfAdapter.pauseVm(handle)
             if (result.isSuccess) {
-                getCurrentInfo() ?: return@executeOperation Result.failure(
+                val info = getCurrentInfo() ?: return@executeOperation Result.failure(
                     VmError.UnknownError("Failed to get VM info after pause")
                 )
+                Result.success(info)
             } else {
-                return@executeOperation Result.failure(
+                Result.failure(
                     result.exceptionOrNull() ?: VmError.UnknownError("Pause failed")
                 )
             }
@@ -168,11 +170,12 @@ class VmManagerImpl @Inject constructor(
             
             val result = avfAdapter.resumeVm(handle)
             if (result.isSuccess) {
-                getCurrentInfo() ?: return@executeOperation Result.failure(
+                val info = getCurrentInfo() ?: return@executeOperation Result.failure(
                     VmError.UnknownError("Failed to get VM info after resume")
                 )
+                Result.success(info)
             } else {
-                return@executeOperation Result.failure(
+                Result.failure(
                     result.exceptionOrNull() ?: VmError.UnknownError("Resume failed")
                 )
             }

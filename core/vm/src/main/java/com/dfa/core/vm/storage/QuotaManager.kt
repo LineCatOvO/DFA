@@ -1,7 +1,5 @@
 package com.dfa.core.vm.storage
 
-import com.dfa.core.vm.storage.models.QuotaType
-
 /**
  * 配额管理器接口
  *

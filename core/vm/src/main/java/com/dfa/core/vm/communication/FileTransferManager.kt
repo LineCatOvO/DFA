@@ -359,7 +359,7 @@ internal class FileTransferSessionImpl(
         // 创建文件
         file.createNewFile()
         val raf = RandomAccessFile(file, "rw")
-        raf.setFileSize(fileSize)
+        raf.setLength(fileSize)
 
         try {
             // 接收数据并写入文件

@@ -37,7 +37,7 @@ sealed class VmError : Throwable() {
     data class NetworkError(override val message: String) : VmError()
     data class PermissionError(override val message: String) : VmError()
     data class TimeoutError(override val message: String) : VmError()
-    data class UnknownError(override val message: String, val cause: Throwable? = null) : VmError()
+    data class UnknownError(override val message: String, override val cause: Throwable? = null) : VmError()
 }
 
 /**

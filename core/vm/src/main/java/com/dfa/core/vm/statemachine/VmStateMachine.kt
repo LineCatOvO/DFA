@@ -9,6 +9,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.reflect.KClass
 
 /**
  * 虚拟机状态机
@@ -73,7 +74,7 @@ class VmStateMachine @Inject constructor() {
     /**
      * 事件到目标状态的映射
      */
-    private val eventToTargetState: Map<VmEvent, VmState> = mapOf(
+    private val eventToTargetState: Map<KClass<out VmEvent>, VmState> = mapOf(
         VmEvent.Start::class to VmState.STARTING,
         VmEvent.Stop::class to VmState.STOPPING,
         VmEvent.Pause::class to VmState.PAUSED,

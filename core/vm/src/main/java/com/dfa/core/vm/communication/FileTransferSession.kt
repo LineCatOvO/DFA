@@ -159,7 +159,7 @@ sealed class TransferError : Throwable() {
     data class ChecksumError(override val message: String) : TransferError()
     data class PermissionError(override val message: String) : TransferError()
     data class SizeLimitError(override val message: String) : TransferError()
-    data class UnknownError(override val message: String, val cause: Throwable? = null) : TransferError()
+    data class UnknownError(override val message: String, override val cause: Throwable? = null) : TransferError()
 }
 
 /**

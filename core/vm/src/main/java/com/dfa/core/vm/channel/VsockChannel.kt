@@ -79,7 +79,7 @@ data class VsockSocketOptions(
 /**
  * Vsock通道配置
  */
-data class VsockChannelConfig(
+class VsockChannelConfig(
     override val type: ChannelType = ChannelType.VSOCK,
     override val port: Int,
     override val path: String? = null,

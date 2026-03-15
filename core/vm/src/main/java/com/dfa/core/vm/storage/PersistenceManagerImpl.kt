@@ -1,9 +1,5 @@
 package com.dfa.core.vm.storage
 
-import com.dfa.core.vm.storage.models.PersistenceResult
-import com.dfa.core.vm.storage.models.PersistenceState
-import com.dfa.core.vm.storage.models.SnapshotMetadata
-import com.dfa.core.vm.storage.models.VmStateData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -95,8 +91,16 @@ class PersistenceManagerImpl @Inject constructor(
 
             // 加密（如果启用）
             val dataToSave = if (encryptionManager.isInitialized()) {
-                val encrypted = encryptionManager.encryptData(serialized).getOrThrow()
-                encrypted.toByteArray()
+                val encrypted = encryptionManager.encryptData(serialized)
+                if (encrypted.success && encrypted.encryptedData != null) {
+                    encrypted.encryptedData.toByteArray()
+                } else {
+                    return Result.failure(
+                        StorageException.PersistenceException(
+                            "Encryption failed: ${encrypted.errorMessage}"
+                        )
+                    )
+                }
             } else {
                 serialized
             }
@@ -171,7 +175,16 @@ class PersistenceManagerImpl @Inject constructor(
 
             // 解密（如果启用）
             val decrypted = if (encryptionManager.isInitialized()) {
-                encryptionManager.decryptData(data).getOrThrow().data!!
+                val result = encryptionManager.decryptData(data)
+                if (result.success && result.data != null) {
+                    result.data
+                } else {
+                    return Result.failure(
+                        StorageException.PersistenceException(
+                            "Decryption failed: ${result.errorMessage}"
+                        )
+                    )
+                }
             } else {
                 data
             }
@@ -260,8 +273,16 @@ class PersistenceManagerImpl @Inject constructor(
 
             // 加密（如果启用）
             val dataToSave = if (encryptionManager.isInitialized()) {
-                val encrypted = encryptionManager.encryptData(serialized).getOrThrow()
-                encrypted.toByteArray()
+                val encrypted = encryptionManager.encryptData(serialized)
+                if (encrypted.success && encrypted.encryptedData != null) {
+                    encrypted.encryptedData.toByteArray()
+                } else {
+                    return Result.failure(
+                        StorageException.PersistenceException(
+                            "Encryption failed: ${encrypted.errorMessage}"
+                        )
+                    )
+                }
             } else {
                 serialized
             }
@@ -326,7 +347,16 @@ class PersistenceManagerImpl @Inject constructor(
 
             // 解密（如果启用）
             val decrypted = if (encryptionManager.isInitialized()) {
-                encryptionManager.decryptData(data).getOrThrow().data!!
+                val result = encryptionManager.decryptData(data)
+                if (result.success && result.data != null) {
+                    result.data
+                } else {
+                    return Result.failure(
+                        StorageException.PersistenceException(
+                            "Decryption failed: ${result.errorMessage}"
+                        )
+                    )
+                }
             } else {
                 data
             }

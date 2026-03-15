@@ -45,8 +45,8 @@ class VsockChannelImpl @Inject constructor() : VsockChannel {
 
     private var _config: VsockChannelConfig? = null
     private var _socket: Socket? = null
-    private var _inputStream: FileInputStream? = null
-    private var _outputStream: FileOutputStream? = null
+    private var _inputStream: java.io.InputStream? = null
+    private var _outputStream: java.io.OutputStream? = null
     private var _receiveJob: Job? = null
     private var _reconnectJob: Job? = null
 
@@ -255,17 +255,27 @@ class VsockChannelImpl @Inject constructor() : VsockChannel {
         
         if (proxyFile.exists()) {
             // 使用Unix域套接字代理
-            val address = java.net.UnixDomainSocketAddress.of(proxyPath)
-            val channel = java.nio.channels.SocketChannel.open(address)
-            _socket = channel.socket()
+            // 注意：Android上使用LocalSocket而不是java.net.UnixDomainSocketAddress
+            try {
+                val localSocket = android.net.LocalSocket()
+                localSocket.connect(android.net.LocalSocketAddress(proxyPath))
+                _inputStream = localSocket.inputStream
+                _outputStream = localSocket.outputStream
+                // LocalSocket不直接提供Socket对象，使用null并在其他地方处理
+                _socket = null
+            } catch (e: Exception) {
+                // 如果LocalSocket失败，回退到普通Socket
+                _socket = Socket("127.0.0.1", config.port)
+                _inputStream = _socket?.getInputStream()
+                _outputStream = _socket?.getOutputStream()
+            }
         } else {
             // 方式2：使用本地回环作为后备方案（用于测试）
             // 实际生产环境需要使用真正的Vsock连接
             _socket = Socket("127.0.0.1", config.port)
+            _inputStream = _socket?.getInputStream()
+            _outputStream = _socket?.getOutputStream()
         }
-
-        _inputStream = FileInputStream(_socket?.inputStream)
-        _outputStream = FileOutputStream(_socket?.outputStream)
 
         // 应用套接字选项
         config.socketOptions.let { opts ->

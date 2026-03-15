@@ -141,7 +141,7 @@ sealed class StorageError : Throwable() {
 
     data class UnknownError(
         override val message: String,
-        val cause: Throwable? = null
+        override val cause: Throwable? = null
     ) : StorageError()
 }
 

@@ -255,7 +255,7 @@ data class SafFileInfo(
      * 文件扩展名
      */
     val extension: String?
-        get() = name.substringAfterLast('.', null)
+        get() = name.substringAfterLast('.').takeIf { it != name }
 
     /**
      * 是否是镜像文件

@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -250,11 +251,4 @@ class CommunicationManagerImpl @Inject constructor(
         private const val HEARTBEAT_INTERVAL = 30000L // 30 seconds
         private const val MONITOR_INTERVAL = 5000L // 5 seconds
     }
-}
-
-/**
- * 扩展函数：过滤Flow
- */
-private fun <T> Flow<T>.filter(predicate: suspend (T) -> Boolean): Flow<T> {
-    return kotlinx.coroutines.flow.filter(predicate)
 }

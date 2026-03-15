@@ -111,10 +111,10 @@ data class ImageDownloadProgress(
  */
 sealed class ImageError : Throwable() {
     /** 网络错误 */
-    data class NetworkError(override val message: String, val cause: Throwable? = null) : ImageError()
+    data class NetworkError(override val message: String, override val cause: Throwable? = null) : ImageError()
 
     /** 存储错误 */
-    data class StorageError(override val message: String, val cause: Throwable? = null) : ImageError()
+    data class StorageError(override val message: String, override val cause: Throwable? = null) : ImageError()
 
     /** 校验错误 */
     data class ChecksumError(override val message: String, val expected: String, val actual: String) : ImageError()
@@ -129,7 +129,7 @@ sealed class ImageError : Throwable() {
     data class TimeoutError(override val message: String) : ImageError()
 
     /** 未知错误 */
-    data class UnknownError(override val message: String, val cause: Throwable? = null) : ImageError()
+    data class UnknownError(override val message: String, override val cause: Throwable? = null) : ImageError()
 }
 
 /**

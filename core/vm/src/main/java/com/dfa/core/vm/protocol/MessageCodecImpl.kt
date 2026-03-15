@@ -82,9 +82,17 @@ class MessageCodecImpl @Inject constructor(
                 }
                 else -> {
                     // 对于其他类型，转换为JSON字符串
-                    val jsonData = json.encodeToString(response.body.data)
-                    @Suppress("UNCHECKED_CAST")
-                    response as Response<String>
+                    val jsonData = response.body.data.toString()
+                    Response(
+                        header = response.header,
+                        body = ResponseBody(
+                            code = response.body.code,
+                            message = response.body.message,
+                            data = jsonData,
+                            error = response.body.error,
+                            metadata = response.body.metadata
+                        )
+                    )
                 }
             }
             val jsonString = json.encodeToString(stringResponse)

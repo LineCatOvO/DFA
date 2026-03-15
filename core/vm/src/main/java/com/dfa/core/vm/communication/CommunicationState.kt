@@ -20,7 +20,8 @@ sealed class CommunicationError : Throwable() {
     data class ProtocolError(override val message: String) : CommunicationError()
     data class TimeoutError(override val message: String) : CommunicationError()
     data class PermissionError(override val message: String) : CommunicationError()
-    data class UnknownError(override val message: String, val cause: Throwable? = null) : CommunicationError()
+    data class ConfigurationError(override val message: String) : CommunicationError()
+    data class UnknownError(override val message: String, override val cause: Throwable? = null) : CommunicationError()
 }
 
 /**
@@ -35,15 +36,15 @@ enum class ChannelType {
 /**
  * 通道配置
  */
-data class ChannelConfig(
-    val type: ChannelType,
-    val port: Int = 0,
-    val path: String? = null,
-    val bufferSize: Int = DEFAULT_BUFFER_SIZE,
-    val timeoutMs: Long = DEFAULT_TIMEOUT_MS,
-    val enableReconnect: Boolean = true,
-    val maxReconnectAttempts: Int = MAX_RECONNECT_ATTEMPTS,
-    val reconnectDelayMs: Long = RECONNECT_DELAY_MS
+open class ChannelConfig(
+    open val type: ChannelType,
+    open val port: Int = 0,
+    open val path: String? = null,
+    open val bufferSize: Int = DEFAULT_BUFFER_SIZE,
+    open val timeoutMs: Long = DEFAULT_TIMEOUT_MS,
+    open val enableReconnect: Boolean = true,
+    open val maxReconnectAttempts: Int = MAX_RECONNECT_ATTEMPTS,
+    open val reconnectDelayMs: Long = RECONNECT_DELAY_MS
 ) {
     companion object {
         const val DEFAULT_BUFFER_SIZE = 65536 // 64KB

@@ -5,7 +5,6 @@ import com.dfa.core.vm.storage.models.CleanupResult
 import com.dfa.core.vm.storage.models.EncryptionConfig
 import com.dfa.core.vm.storage.models.StorageConfig
 import com.dfa.core.vm.storage.models.StorageInfo
-import com.dfa.core.vm.storage.models.StorageState
 import com.dfa.core.vm.storage.models.StorageStatistics
 import com.dfa.core.vm.storage.models.StorageType
 import kotlinx.coroutines.Dispatchers

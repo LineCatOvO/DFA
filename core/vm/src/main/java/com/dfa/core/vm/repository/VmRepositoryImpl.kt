@@ -7,6 +7,7 @@ import com.dfa.core.vm.VmState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
@@ -94,8 +95,11 @@ class VmRepositoryImpl @Inject constructor() : VmRepository {
         return getOrCreateStateFlow(vmId).asStateFlow()
     }
     
-    override fun observeVmInfo(vmId: String): Flow<VmInfo?> {
-        return getOrCreateInfoFlow(vmId).asStateFlow()
+    override fun observeVmInfo(vmId: String): Flow<VmInfo> {
+        return getOrCreateInfoFlow(vmId).map { it ?: VmInfo(
+            config = VmConfig(id = vmId, name = "Unknown"),
+            state = VmState.ERROR
+        ) }
     }
     
     override suspend fun saveVmConfig(config: VmConfig) {

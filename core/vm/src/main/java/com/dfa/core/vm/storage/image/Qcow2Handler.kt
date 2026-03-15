@@ -181,10 +181,7 @@ class Qcow2Handler @Inject constructor() {
             // 读取现有头部
             val header = readQcow2Header(file)
 
-            // 更新虚拟大小
-            header.virtualSize = newSizeBytes
-
-            // 写回头部
+            // 写入新的虚拟大小
             RandomAccessFile(file, "rw").use { raf ->
                 raf.seek(24) // virtual_size offset
                 raf.writeLong(newSizeBytes)
@@ -295,7 +292,7 @@ class Qcow2Handler @Inject constructor() {
     )
 
     companion object {
-        private val QCOW2_MAGIC = byteArrayOf(0x51, 0x46, 0x49, 0xfb) // "QFI\xfb"
+        private val QCOW2_MAGIC = byteArrayOf(0x51.toByte(), 0x46.toByte(), 0x49.toByte(), 0xfb.toByte()) // "QFI\xfb"
         private const val QCOW2_VERSION = 3
     }
 }

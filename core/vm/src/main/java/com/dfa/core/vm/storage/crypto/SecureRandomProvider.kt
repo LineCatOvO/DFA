@@ -12,7 +12,7 @@ import javax.inject.Singleton
 @Singleton
 class SecureRandomProvider @Inject constructor() {
 
-    private val secureRandom: SecureRandom by lazy {
+    private val _secureRandom: SecureRandom by lazy {
         SecureRandom.getInstanceStrong() ?: SecureRandom()
     }
 
@@ -25,7 +25,7 @@ class SecureRandomProvider @Inject constructor() {
     fun generateRandomBytes(size: Int): ByteArray {
         require(size > 0) { "Size must be positive" }
         val bytes = ByteArray(size)
-        secureRandom.nextBytes(bytes)
+        _secureRandom.nextBytes(bytes)
         return bytes
     }
 
@@ -37,7 +37,7 @@ class SecureRandomProvider @Inject constructor() {
      */
     fun generateRandomInt(bound: Int): Int {
         require(bound > 0) { "Bound must be positive" }
-        return secureRandom.nextInt(bound)
+        return _secureRandom.nextInt(bound)
     }
 
     /**
@@ -46,7 +46,7 @@ class SecureRandomProvider @Inject constructor() {
      * @return 随机长整数
      */
     fun generateRandomLong(): Long {
-        return secureRandom.nextLong()
+        return _secureRandom.nextLong()
     }
 
     /**
@@ -55,7 +55,7 @@ class SecureRandomProvider @Inject constructor() {
      * @return 随机布尔值
      */
     fun generateRandomBoolean(): Boolean {
-        return secureRandom.nextBoolean()
+        return _secureRandom.nextBoolean()
     }
 
     /**
@@ -64,7 +64,7 @@ class SecureRandomProvider @Inject constructor() {
      * @param bytes 待填充的字节数组
      */
     fun fillRandomBytes(bytes: ByteArray) {
-        secureRandom.nextBytes(bytes)
+        _secureRandom.nextBytes(bytes)
     }
 
     /**
@@ -83,7 +83,7 @@ class SecureRandomProvider @Inject constructor() {
 
         val result = StringBuilder(length)
         for (i in 0 until length) {
-            val index = secureRandom.nextInt(charset.length)
+            val index = _secureRandom.nextInt(charset.length)
             result.append(charset[index])
         }
         return result.toString()
@@ -119,7 +119,7 @@ class SecureRandomProvider @Inject constructor() {
      * @return SecureRandom实例
      */
     fun getSecureRandom(): SecureRandom {
-        return secureRandom
+        return _secureRandom
     }
 
     companion object {
