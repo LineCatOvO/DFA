@@ -1,10 +1,11 @@
 package com.dfa.core.vm
 
-import com.dfa.core.vm.avf.AvfVmAdapter
-import com.dfa.core.vm.avf.AvfVmCallback
+import com.dfa.core.vm.qemu.QemuVmAdapter
+import com.dfa.core.vm.qemu.QemuVmCallback
 import com.dfa.core.vm.repository.VmRepository
 import com.dfa.core.vm.statemachine.StateTransitionResult
 import com.dfa.core.vm.statemachine.VmStateMachine
+import com.dfa.core.vm.termux.TermuxBridge
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,34 +16,36 @@ import javax.inject.Singleton
 
 /**
  * 虚拟机管理器实现
- * 
- * 协调状态机、适配器和仓库，提供完整的虚拟机生命周期管理
+ *
+ * 协调状态机、QEMU适配器和仓库，提供完整的虚拟机生命周期管理
+ * 支持Termux环境集成
  */
 @Singleton
 class VmManagerImpl @Inject constructor(
     private val stateMachine: VmStateMachine,
-    private val avfAdapter: AvfVmAdapter,
-    private val repository: VmRepository
-) : VmManager, AvfVmCallback {
-    
+    private val qemuAdapter: QemuVmAdapter,
+    private val repository: VmRepository,
+    private val termuxBridge: TermuxBridge
+) : VmManager, QemuVmCallback {
+
     private val mutex = Mutex()
-    
+
     private val _vmState = MutableStateFlow(VmState.CREATED)
     override val vmState: StateFlow<VmState> = _vmState.asStateFlow()
-    
+
     private val _vmInfo = MutableStateFlow<VmInfo?>(null)
     override val vmInfo: StateFlow<VmInfo?> = _vmInfo.asStateFlow()
-    
+
     private val _isInitialized = MutableStateFlow(false)
     override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
-    
+
     private var currentConfig: VmConfig? = null
-    private var currentHandle: AvfVmHandle? = null
-    
+    private var currentHandle: QemuVmHandle? = null
+
     init {
-        avfAdapter.registerCallback(this)
+        qemuAdapter.registerCallback(this)
     }
-    
+
     override suspend fun initialize(config: VmConfig): Result<VmInfo> {
         return mutex.withLock {
             try {
@@ -52,66 +55,73 @@ class VmManagerImpl @Inject constructor(
                         VmError.ConfigurationError("Invalid VM configuration")
                     )
                 }
-                
-                // 检查AVF可用性
-                if (!avfAdapter.isAvfAvailable()) {
+
+                // 检查Termux环境可用性
+                if (!termuxBridge.isTermuxAvailable()) {
                     return@withLock Result.failure(
-                        VmError.ResourceError("AVF is not available on this device")
+                        VmError.ResourceError("Termux environment is not available")
                     )
                 }
-                
+
+                // 检查QEMU可用性
+                if (!qemuAdapter.isQemuAvailable()) {
+                    return@withLock Result.failure(
+                        VmError.ResourceError("QEMU is not available in Termux")
+                    )
+                }
+
                 // 检查配置支持
-                if (!avfAdapter.isConfigSupported(config)) {
+                if (!qemuAdapter.isConfigSupported(config)) {
                     return@withLock Result.failure(
                         VmError.ConfigurationError("Configuration not supported: $config")
                     )
                 }
-                
+
                 // 创建虚拟机
-                val handleResult = avfAdapter.createVm(config)
+                val handleResult = qemuAdapter.createVm(config)
                 if (handleResult.isFailure) {
                     return@withLock Result.failure(
                         handleResult.exceptionOrNull() ?: VmError.UnknownError("Failed to create VM")
                     )
                 }
-                
+
                 val handle = handleResult.getOrThrow()
                 currentConfig = config
                 currentHandle = handle
-                
+
                 // 保存到仓库
                 repository.saveVmConfig(config)
                 repository.saveVmHandle(config.id, handle)
-                
+
                 // 初始化状态机
                 stateMachine.reset()
-                
+
                 // 创建初始VmInfo
                 val vmInfo = VmInfo(
                     config = config,
                     state = VmState.CREATED,
                     handle = handle
                 )
-                
+
                 repository.saveVmInfo(vmInfo)
                 _vmInfo.value = vmInfo
                 _vmState.value = VmState.CREATED
                 _isInitialized.value = true
-                
+
                 Result.success(vmInfo)
             } catch (e: Exception) {
                 Result.failure(VmError.UnknownError("Initialization failed: ${e.message}", e))
             }
         }
     }
-    
+
     override suspend fun start(): Result<VmInfo> {
         return executeOperation(VmManager.VmOperation.START) {
             val handle = currentHandle ?: return@executeOperation Result.failure(
                 VmError.ConfigurationError("VM not initialized")
             )
-            
-            val result = avfAdapter.startVm(handle)
+
+            val result = qemuAdapter.startVm(handle)
             if (result.isSuccess) {
                 Result.success(result.getOrThrow())
             } else {
@@ -121,14 +131,14 @@ class VmManagerImpl @Inject constructor(
             }
         }
     }
-    
+
     override suspend fun stop(force: Boolean): Result<VmInfo> {
         return executeOperation(VmManager.VmOperation.STOP) {
             val handle = currentHandle ?: return@executeOperation Result.failure(
                 VmError.ConfigurationError("VM not initialized")
             )
-            
-            val result = avfAdapter.stopVm(handle, force)
+
+            val result = qemuAdapter.stopVm(handle, force)
             if (result.isSuccess) {
                 val info = getCurrentInfo() ?: return@executeOperation Result.failure(
                     VmError.UnknownError("Failed to get VM info after stop")
@@ -141,14 +151,14 @@ class VmManagerImpl @Inject constructor(
             }
         }
     }
-    
+
     override suspend fun pause(): Result<VmInfo> {
         return executeOperation(VmManager.VmOperation.PAUSE) {
             val handle = currentHandle ?: return@executeOperation Result.failure(
                 VmError.ConfigurationError("VM not initialized")
             )
-            
-            val result = avfAdapter.pauseVm(handle)
+
+            val result = qemuAdapter.pauseVm(handle)
             if (result.isSuccess) {
                 val info = getCurrentInfo() ?: return@executeOperation Result.failure(
                     VmError.UnknownError("Failed to get VM info after pause")
@@ -161,14 +171,14 @@ class VmManagerImpl @Inject constructor(
             }
         }
     }
-    
+
     override suspend fun resume(): Result<VmInfo> {
         return executeOperation(VmManager.VmOperation.RESUME) {
             val handle = currentHandle ?: return@executeOperation Result.failure(
                 VmError.ConfigurationError("VM not initialized")
             )
-            
-            val result = avfAdapter.resumeVm(handle)
+
+            val result = qemuAdapter.resumeVm(handle)
             if (result.isSuccess) {
                 val info = getCurrentInfo() ?: return@executeOperation Result.failure(
                     VmError.UnknownError("Failed to get VM info after resume")
@@ -181,21 +191,21 @@ class VmManagerImpl @Inject constructor(
             }
         }
     }
-    
+
     override suspend fun reset(): Result<VmInfo> {
         return mutex.withLock {
             try {
                 val config = currentConfig
                 val handle = currentHandle
-                
+
                 // 销毁现有虚拟机
                 if (handle != null) {
-                    avfAdapter.destroyVm(handle)
+                    qemuAdapter.destroyVm(handle)
                 }
-                
+
                 // 重置状态机
                 stateMachine.reset()
-                
+
                 // 重新初始化
                 if (config != null) {
                     initialize(config)
@@ -207,11 +217,11 @@ class VmManagerImpl @Inject constructor(
             }
         }
     }
-    
+
     override fun getCurrentState(): VmState = _vmState.value
-    
+
     override fun getCurrentInfo(): VmInfo? = _vmInfo.value
-    
+
     override fun canPerformOperation(operation: VmManager.VmOperation): Boolean {
         val currentState = _vmState.value
         return when (operation) {
@@ -223,32 +233,32 @@ class VmManagerImpl @Inject constructor(
             VmManager.VmOperation.MIGRATE -> currentState == VmState.RUNNING
         }
     }
-    
+
     override suspend fun release() {
         mutex.withLock {
             currentHandle?.let { handle ->
-                avfAdapter.destroyVm(handle)
+                qemuAdapter.destroyVm(handle)
             }
-            
+
             currentConfig?.id?.let { vmId ->
                 repository.deleteVmInfo(vmId)
                 repository.deleteVmHandle(vmId)
             }
-            
+
             currentConfig = null
             currentHandle = null
             _vmInfo.value = null
             _vmState.value = VmState.CREATED
             _isInitialized.value = false
-            
+
             stateMachine.reset()
         }
     }
-    
-    // AvfVmCallback 实现
+
+    // QemuVmCallback 实现
     override fun onStateChanged(newState: VmState) {
         _vmState.value = newState
-        
+
         currentConfig?.let { config ->
             val updatedInfo = _vmInfo.value?.copy(state = newState) ?: VmInfo(
                 config = config,
@@ -258,10 +268,10 @@ class VmManagerImpl @Inject constructor(
             _vmInfo.value = updatedInfo
         }
     }
-    
+
     override fun onError(error: VmError) {
         _vmState.value = VmState.ERROR
-        
+
         currentConfig?.let { config ->
             val updatedInfo = VmInfo(
                 config = config,
@@ -272,7 +282,7 @@ class VmManagerImpl @Inject constructor(
             _vmInfo.value = updatedInfo
         }
     }
-    
+
     override fun onVmStarted(ipAddress: String) {
         currentConfig?.let { config ->
             val updatedInfo = VmInfo(
@@ -284,7 +294,7 @@ class VmManagerImpl @Inject constructor(
             _vmInfo.value = updatedInfo
         }
     }
-    
+
     override fun onVmStopped() {
         currentConfig?.let { config ->
             val updatedInfo = VmInfo(
@@ -295,7 +305,7 @@ class VmManagerImpl @Inject constructor(
             _vmInfo.value = updatedInfo
         }
     }
-    
+
     override fun onVmDestroyed() {
         currentConfig = null
         currentHandle = null
@@ -303,7 +313,7 @@ class VmManagerImpl @Inject constructor(
         _vmState.value = VmState.CREATED
         _isInitialized.value = false
     }
-    
+
     /**
      * 执行操作的通用方法
      */
@@ -317,13 +327,13 @@ class VmManagerImpl @Inject constructor(
                     VmError.ConfigurationError("VM not initialized")
                 )
             }
-            
+
             if (!canPerformOperation(operation)) {
                 return@withLock Result.failure(
                     VmError.ResourceError("Cannot perform $operation in current state: ${_vmState.value}")
                 )
             }
-            
+
             // 状态转换
             val event = when (operation) {
                 VmManager.VmOperation.START -> VmEvent.Start(currentConfig!!)
@@ -335,17 +345,17 @@ class VmManagerImpl @Inject constructor(
                     VmError.ResourceError("Migration not implemented")
                 )
             }
-            
+
             val transitionResult = stateMachine.handleEvent(event)
             if (!transitionResult.isSuccess) {
                 return@withLock Result.failure(
                     VmError.ResourceError("Invalid state transition: $transitionResult")
                 )
             }
-            
+
             // 执行操作
             val result = action()
-            
+
             // 更新状态
             if (result.isSuccess) {
                 val vmInfo = result.getOrThrow()
@@ -353,7 +363,7 @@ class VmManagerImpl @Inject constructor(
                 _vmInfo.value = vmInfo
                 _vmState.value = vmInfo.state
             }
-            
+
             result
         }
     }

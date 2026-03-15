@@ -3,12 +3,11 @@ package com.dfa.core.vm.di
 import android.content.Context
 import com.dfa.core.vm.VmManager
 import com.dfa.core.vm.VmManagerImpl
-import com.dfa.core.vm.avf.AvfVmAdapter
-import com.dfa.core.vm.avf.AvfVmAdapterImpl
-import com.dfa.core.vm.channel.VirtIOChannel
-import com.dfa.core.vm.channel.VirtIOChannelImpl
-import com.dfa.core.vm.channel.VsockChannel
-import com.dfa.core.vm.channel.VsockChannelImpl
+import com.dfa.core.vm.channel.SshChannel
+import com.dfa.core.vm.channel.SshChannelImpl
+import com.dfa.core.vm.channel.SocketChannel
+import com.dfa.core.vm.channel.SocketChannelImpl
+import com.dfa.core.vm.channel.SocketChannelFactory
 import com.dfa.core.vm.communication.CommunicationErrorHandler
 import com.dfa.core.vm.communication.CommunicationErrorHandlerImpl
 import com.dfa.core.vm.communication.CommunicationManager
@@ -25,6 +24,12 @@ import com.dfa.core.vm.image.ImageManagerImpl
 import com.dfa.core.vm.protocol.CodecConfig
 import com.dfa.core.vm.protocol.MessageCodec
 import com.dfa.core.vm.protocol.MessageCodecImpl
+import com.dfa.core.vm.qemu.QemuMonitor
+import com.dfa.core.vm.qemu.QemuMonitorImpl
+import com.dfa.core.vm.qemu.QemuProcessManager
+import com.dfa.core.vm.qemu.QemuProcessManagerImpl
+import com.dfa.core.vm.qemu.QemuVmAdapter
+import com.dfa.core.vm.qemu.QemuVmAdapterImpl
 import com.dfa.core.vm.repository.VmRepository
 import com.dfa.core.vm.repository.VmRepositoryImpl
 import com.dfa.core.vm.storage.DiskImageManager
@@ -46,6 +51,10 @@ import com.dfa.core.vm.storage.crypto.SecureRandomProvider
 import com.dfa.core.vm.storage.image.ImageFormatDetector
 import com.dfa.core.vm.storage.image.Qcow2Handler
 import com.dfa.core.vm.storage.image.RawImageHandler
+import com.dfa.core.vm.termux.TermuxBridge
+import com.dfa.core.vm.termux.TermuxBridgeImpl
+import com.dfa.core.vm.termux.TermuxPackageManager
+import com.dfa.core.vm.termux.TermuxPackageManagerImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -56,6 +65,8 @@ import javax.inject.Singleton
 
 /**
  * 虚拟机模块的Hilt依赖注入配置
+ * 
+ * 支持QEMU虚拟机和Termux环境集成
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -76,11 +87,53 @@ abstract class VmModule {
     abstract fun bindVmRepository(impl: VmRepositoryImpl): VmRepository
 
     /**
-     * 绑定AvfVmAdapter接口到实现
+     * 绑定QemuVmAdapter接口到实现
      */
     @Binds
     @Singleton
-    abstract fun bindAvfVmAdapter(impl: AvfVmAdapterImpl): AvfVmAdapter
+    abstract fun bindQemuVmAdapter(impl: QemuVmAdapterImpl): QemuVmAdapter
+
+    /**
+     * 绑定QemuProcessManager接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindQemuProcessManager(impl: QemuProcessManagerImpl): QemuProcessManager
+
+    /**
+     * 绑定QemuMonitor接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindQemuMonitor(impl: QemuMonitorImpl): QemuMonitor
+
+    /**
+     * 绑定SshChannel接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindSshChannel(impl: SshChannelImpl): SshChannel
+
+    /**
+     * 绑定SocketChannel接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindSocketChannel(impl: SocketChannelImpl): SocketChannel
+
+    /**
+     * 绑定TermuxBridge接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindTermuxBridge(impl: TermuxBridgeImpl): TermuxBridge
+
+    /**
+     * 绑定TermuxPackageManager接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindTermuxPackageManager(impl: TermuxPackageManagerImpl): TermuxPackageManager
 
     /**
      * 绑定ImageDownloader接口到实现
@@ -123,20 +176,6 @@ abstract class VmModule {
     @Binds
     @Singleton
     abstract fun bindMessageCodec(impl: MessageCodecImpl): MessageCodec
-
-    /**
-     * 绑定VirtIOChannel接口到实现
-     */
-    @Binds
-    @Singleton
-    abstract fun bindVirtIOChannel(impl: VirtIOChannelImpl): VirtIOChannel
-
-    /**
-     * 绑定VsockChannel接口到实现
-     */
-    @Binds
-    @Singleton
-    abstract fun bindVsockChannel(impl: VsockChannelImpl): VsockChannel
 
     /**
      * 绑定StorageManager接口到实现
@@ -349,6 +388,79 @@ abstract class VmModule {
                 quotaManager = quotaManager,
                 persistenceManager = persistenceManager,
                 safStorageProvider = safStorageProvider
+            )
+        }
+
+        /**
+         * 提供SocketChannelFactory实例
+         */
+        @Provides
+        @Singleton
+        fun provideSocketChannelFactory(): SocketChannelFactory {
+            return SocketChannelFactory()
+        }
+
+        /**
+         * 提供QemuVmAdapterImpl实例
+         */
+        @Provides
+        @Singleton
+        fun provideQemuVmAdapterImpl(
+            processManager: QemuProcessManager,
+            monitor: QemuMonitor,
+            sshChannel: SshChannel,
+            socketChannel: SocketChannel,
+            socketChannelFactory: SocketChannelFactory,
+            @ApplicationContext context: Context
+        ): QemuVmAdapterImpl {
+            return QemuVmAdapterImpl(
+                processManager = processManager,
+                monitor = monitor,
+                sshChannel = sshChannel,
+                socketChannel = socketChannel,
+                socketChannelFactory = socketChannelFactory,
+                context = context
+            )
+        }
+
+        /**
+         * 提供TermuxBridgeImpl实例
+         */
+        @Provides
+        @Singleton
+        fun provideTermuxBridgeImpl(
+            @ApplicationContext context: Context
+        ): TermuxBridgeImpl {
+            return TermuxBridgeImpl(context)
+        }
+
+        /**
+         * 提供TermuxPackageManagerImpl实例
+         */
+        @Provides
+        @Singleton
+        fun provideTermuxPackageManagerImpl(
+            termuxBridge: TermuxBridge
+        ): TermuxPackageManagerImpl {
+            return TermuxPackageManagerImpl(termuxBridge)
+        }
+
+        /**
+         * 提供VmManagerImpl实例
+         */
+        @Provides
+        @Singleton
+        fun provideVmManagerImpl(
+            stateMachine: com.dfa.core.vm.statemachine.VmStateMachine,
+            qemuAdapter: QemuVmAdapter,
+            repository: VmRepository,
+            termuxBridge: TermuxBridge
+        ): VmManagerImpl {
+            return VmManagerImpl(
+                stateMachine = stateMachine,
+                qemuAdapter = qemuAdapter,
+                repository = repository,
+                termuxBridge = termuxBridge
             )
         }
     }

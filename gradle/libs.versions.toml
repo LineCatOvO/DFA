@@ -21,6 +21,7 @@ junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 mockk = "1.13.9"
 turbine = "1.0.0"
+jsch = "0.2.18"
 
 [libraries]
 # AndroidX
@@ -68,6 +69,9 @@ okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-i
 
 # Image Loading
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+
+# SSH
+jsch = { group = "com.github.mwiede", name = "jsch", version.ref = "jsch" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }

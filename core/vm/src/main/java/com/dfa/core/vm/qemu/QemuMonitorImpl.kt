@@ -979,7 +979,7 @@ data class QemuVersionInfo(
     val major: Int? = null,
     val minor: Int? = null,
     val micro: Int? = null,
-    val package: String? = null
+    val `package`: String? = null
 )
 
 /**

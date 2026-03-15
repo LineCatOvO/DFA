@@ -18,7 +18,7 @@ data class QemuDiskConfig(
     val path: String,
     val format: QemuDiskFormat = QemuDiskFormat.QCOW2,
     val sizeGb: Int = 10,
-    val interface: String = "virtio",
+    val `interface`: String = "virtio",
     val cacheMode: String = "writeback",
     val readOnly: Boolean = false,
     val discard: Boolean = false,

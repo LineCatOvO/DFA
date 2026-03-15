@@ -58,10 +58,8 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
 
-    // AVF - Android Virtualization Framework (API 33+)
-    // Note: AVF APIs are system APIs available on Android 13+ devices
-    // The virtualization service is part of the platform
-    compileOnly("android.system.virtualizationservice:virtualizationservice:1.0")
+    // SSH - JSch for SSH connections
+    implementation(libs.jsch)
 
     // Testing
     testImplementation(libs.junit)
