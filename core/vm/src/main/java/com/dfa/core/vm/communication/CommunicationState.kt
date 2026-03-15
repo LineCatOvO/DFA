@@ -30,7 +30,10 @@ sealed class CommunicationError : Throwable() {
 enum class ChannelType {
     VIRTIO_SERIAL,
     VSOCK,
-    SHARED_MEMORY
+    SHARED_MEMORY,
+    SSH,
+    SOCKET_UNIX,
+    SOCKET_TCP
 }
 
 /**
@@ -58,6 +61,9 @@ open class ChannelConfig(
             ChannelType.VIRTIO_SERIAL -> !path.isNullOrBlank()
             ChannelType.VSOCK -> port > 0
             ChannelType.SHARED_MEMORY -> !path.isNullOrBlank()
+            ChannelType.SSH -> port > 0 // SSH需要有效的端口
+            ChannelType.SOCKET_UNIX -> !path.isNullOrBlank() // Unix Domain Socket需要有效路径
+            ChannelType.SOCKET_TCP -> port > 0 // TCP Socket需要有效端口
         }
     }
 }
