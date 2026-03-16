@@ -2,6 +2,7 @@ package com.dfa.core.vm.repository
 
 import com.dfa.core.vm.AvfVmHandle
 import com.dfa.core.vm.VmConfig
+import com.dfa.core.vm.VmHandle
 import com.dfa.core.vm.VmInfo
 import com.dfa.core.vm.VmState
 import kotlinx.coroutines.flow.Flow
@@ -25,7 +26,7 @@ class VmRepositoryImpl @Inject constructor() : VmRepository {
     
     // 内存存储
     private val vmInfoMap = mutableMapOf<String, VmInfo>()
-    private val vmHandleMap = mutableMapOf<String, AvfVmHandle>()
+    private val vmHandleMap = mutableMapOf<String, VmHandle>()
     private val vmConfigMap = mutableMapOf<String, VmConfig>()
     
     // 状态流
@@ -73,13 +74,13 @@ class VmRepositoryImpl @Inject constructor() : VmRepository {
         }
     }
     
-    override suspend fun saveVmHandle(vmId: String, handle: AvfVmHandle) {
+    override suspend fun saveVmHandle(vmId: String, handle: VmHandle) {
         mutex.withLock {
             vmHandleMap[vmId] = handle
         }
     }
     
-    override suspend fun getVmHandle(vmId: String): AvfVmHandle? {
+    override suspend fun getVmHandle(vmId: String): VmHandle? {
         return mutex.withLock {
             vmHandleMap[vmId]
         }

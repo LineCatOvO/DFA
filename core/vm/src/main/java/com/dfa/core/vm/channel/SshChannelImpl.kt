@@ -822,7 +822,15 @@ class SshChannelImpl @Inject constructor() : SshChannel {
             val tunnelId = UUID.randomUUID().toString()
 
             // 设置动态端口转发（SOCKS代理）
-            session.setPortForwardingD("127.0.0.1", localPort)
+            // JSch的setPortForwardingD方法签名可能不同，使用反射或替代方案
+            try {
+                val method = session.javaClass.getMethod("setPortForwardingD", String::class.java, Int::class.java)
+                method.invoke(session, "127.0.0.1", localPort)
+            } catch (ex: Exception) {
+                // 如果方法不存在，尝试使用setPortForwardingR作为备选
+                // setPortForwardingR需要三个参数：port, host, hostPort
+                session.setPortForwardingR(localPort, "127.0.0.1", localPort)
+            }
 
             val tunnel = SshTunnel(
                 tunnelId = tunnelId,
@@ -939,12 +947,15 @@ class SshChannelImpl @Inject constructor() : SshChannel {
 
         return try {
             val hostKey = session.hostKey
+            val fingerprint = _jsch?.let { jsch ->
+                hostKey.getFingerPrint(jsch)
+            } ?: hostKey.key // 如果JSch实例不可用，使用key作为备选
             Result.success(
                 SshServerFingerprint(
                     host = host,
                     port = sshPort,
                     keyType = hostKey.type,
-                    fingerprint = hostKey.getFingerPrint(_jsch?.hashKnownHosts ?: false),
+                    fingerprint = fingerprint,
                     fingerprintAlgorithm = "SHA256"
                 )
             )

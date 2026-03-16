@@ -262,7 +262,7 @@ interface DockerClient {
     suspend fun connectToNetwork(
         networkId: String,
         containerId: String,
-        config: NetworkConnectConfig = NetworkConnectConfig()
+        config: NetworkConnectConfig? = null
     ): Result<Unit>
     
     /**

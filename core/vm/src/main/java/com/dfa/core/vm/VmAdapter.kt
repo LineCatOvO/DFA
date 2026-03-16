@@ -131,11 +131,10 @@ interface VmAdapter {
  * @return 启动结果，包含虚拟机信息
  */
 suspend fun VmAdapter.createAndStartVm(config: VmConfig): Result<VmInfo> {
-    return createVm(config).getOrElse { handle ->
-        return Result.failure(handle)
-    }.let { handle ->
-        startVm(handle.getOrThrow())
+    val handle = createVm(config).getOrElse { error ->
+        return Result.failure(error)
     }
+    return startVm(handle)
 }
 
 /**

@@ -43,7 +43,7 @@ sealed class VmError : Throwable() {
 /**
  * 虚拟机资源配置
  */
-data class VmResources(
+data class VmResourceConfig(
     val memoryMb: Int = 2048,
     val cpuCores: Int = 2,
     val diskSizeGb: Int = 10,
@@ -80,7 +80,7 @@ data class VmConfig(
     val memory: Int = 2048,
     val cpu: Int = 2,
     val diskSize: Int = 10, // GB
-    val resources: VmResources = VmResources(memory, cpu, diskSize),
+    val resources: VmResourceConfig = VmResourceConfig(memory, cpu, diskSize),
     val bootImage: String? = null,
     val kernelImage: String? = null,
     val initrdImage: String? = null,

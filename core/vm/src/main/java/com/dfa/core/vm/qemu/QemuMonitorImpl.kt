@@ -44,8 +44,6 @@ class QemuMonitorImpl(
 
     // 连接状态
     private val _connected = AtomicBoolean(false)
-    override val isConnected: Boolean
-        get() = _connected.get()
 
     // Socket连接
     private var socket: Socket? = null
@@ -393,7 +391,7 @@ class QemuMonitorImpl(
                 }
             }
         }
-        return json.encodeToString(request)
+        return json.encodeToString(JsonObject.serializer(), request)
     }
 
     /**

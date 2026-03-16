@@ -182,10 +182,6 @@ class DockerProviderManagerImpl(
         return providerMap[providerId]
     }
 
-    override fun getActiveProvider(): DockerProvider? {
-        return activeProvider
-    }
-
     override fun listProviders(): List<DockerProvider> {
         return providerMap.values.toList()
     }
@@ -743,7 +739,7 @@ suspend fun DockerProviderManager.getOrCreateProvider(
  * @return 活动Provider
  */
 suspend fun DockerProviderManager.ensureActiveProvider(): Result<DockerProvider> {
-    val current = getActiveProvider()
+    val current = activeProvider
     if (current != null && current.getState() == DockerProviderState.RUNNING) {
         return Result.success(current)
     }
@@ -757,7 +753,7 @@ suspend fun DockerProviderManager.ensureActiveProvider(): Result<DockerProvider>
  * @return Docker客户端，如果没有活动Provider则返回null
  */
 fun DockerProviderManager.getActiveDockerClient(): com.dfa.core.docker.DockerClient? {
-    val provider = getActiveProvider() ?: return null
+    val provider = activeProvider ?: return null
     return try {
         if (provider.getState() == DockerProviderState.RUNNING) {
             provider.getDockerClient()

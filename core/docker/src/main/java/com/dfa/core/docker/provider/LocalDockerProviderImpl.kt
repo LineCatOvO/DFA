@@ -487,7 +487,7 @@ class LocalDockerProviderImpl(
     /**
      * 检查Docker守护进程是否运行
      */
-    private fun isDockerDaemonRunning(): Boolean {
+    private suspend fun isDockerDaemonRunning(): Boolean {
         return try {
             // 首先检查Unix Socket
             if (checkUnixSocket()) {
@@ -520,15 +520,17 @@ class LocalDockerProviderImpl(
     /**
      * 检查TCP连接是否可用
      */
-    private fun checkTcpConnection(host: String): Boolean {
+    private suspend fun checkTcpConnection(host: String): Boolean {
         return try {
             // 解析主机和端口
             val (hostname, port) = parseHostAndPort(host)
             
             withTimeout(5000) {
-                Socket().use { socket ->
-                    socket.connect(java.net.InetSocketAddress(hostname, port), 5000)
-                    true
+                withContext(Dispatchers.IO) {
+                    Socket().use { socket ->
+                        socket.connect(java.net.InetSocketAddress(hostname, port), 5000)
+                        true
+                    }
                 }
             }
         } catch (e: Exception) {

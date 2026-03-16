@@ -363,7 +363,7 @@ class ExecException(
     val stdout: String,
     val stderr: String,
     message: String = "Command execution failed in container $containerId with exit code $exitCode"
-) : DockerException(message, containerId = containerId)
+) : DockerException(message)
 
 // ==================== 健康检查异常 ====================
 
@@ -375,7 +375,7 @@ class ExecException(
 class HealthCheckException(
     val containerId: String,
     message: String = "Health check failed for container: $containerId"
-) : DockerException(message, containerId = containerId)
+) : DockerException(message)
 
 // ==================== 扩展函数 ====================
 

@@ -500,12 +500,19 @@ class QemuVmAdapterImpl(
             }
 
             VmResources(
-                memoryMb = (maxMemory * 0.75).toInt(),
-                cpuCores = (availableProcessors * 0.75).toInt().coerceAtLeast(1),
-                diskSizeGb = freeDisk.toInt(),
-                networkBandwidthMbps = 1000,
-                gpuEnabled = false,
-                gpuMemoryMb = 0
+                backendType = VmBackendType.QEMU,
+                totalMemoryMb = maxMemory,
+                availableMemoryMb = (maxMemory * 0.75).toLong(),
+                totalCpuCores = availableProcessors,
+                availableCpuCores = (availableProcessors * 0.75).toInt().coerceAtLeast(1),
+                totalDiskSpaceGb = freeDisk,
+                availableDiskSpaceGb = freeDisk,
+                gpuAvailable = false,
+                gpuMemoryMb = 0,
+                networkAvailable = true,
+                supportedFeatures = getSupportedFeatures(),
+                maxVms = 1,
+                currentVms = vmHandles.size
             )
         }
     }
@@ -1137,28 +1144,6 @@ object QemuVmAdapterFactoryImpl : QemuVmAdapterFactory {
         val adapter = create()
         return adapter.getQemuVersion().getOrNull()
     }
-}
-
-/**
- * VmFeature枚举定义
- */
-enum class VmFeature {
-    SNAPSHOTS,
-    LIVE_MIGRATION,
-    CPU_HOTPLUG,
-    MEMORY_HOTPLUG,
-    DEVICE_HOTPLUG,
-    VNC_DISPLAY,
-    SPICE_DISPLAY,
-    SERIAL_CONSOLE,
-    USB_PASSTHROUGH,
-    PCI_PASSTHROUGH,
-    GPU_PASSTHROUGH,
-    NETWORK_BRIDGE,
-    PORT_FORWARDING,
-    SHARED_FOLDERS,
-    CLIPBOARD_SHARING,
-    DRAG_AND_DROP
 }
 
 /**

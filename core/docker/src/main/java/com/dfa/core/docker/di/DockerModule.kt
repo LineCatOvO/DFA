@@ -15,10 +15,8 @@ import com.dfa.core.docker.provider.LocalDockerProviderConfig
 import com.dfa.core.docker.provider.LocalDockerProviderFactory
 import com.dfa.core.docker.provider.QemuDockerProviderConfig
 import com.dfa.core.docker.provider.QemuDockerProviderFactory
-import com.dfa.core.vm.avf.AvfVmAdapter
-import com.dfa.core.vm.channel.SshChannelConfig
-import com.dfa.core.vm.channel.VsockChannelConfig
 import com.dfa.core.vm.qemu.QemuVmAdapter
+import com.dfa.core.vm.channel.SshChannelConfig
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -163,7 +161,7 @@ abstract class DockerModule {
                 }
 
                 override suspend fun getQemuVersion(): String? {
-                    return qemuVmAdapter.getQemuVersion()
+                    return qemuVmAdapter.getQemuVersion().getOrNull()
                 }
 
                 private fun createQemuProvider(
@@ -199,16 +197,17 @@ abstract class DockerModule {
 
         /**
          * 提供AVF Docker Provider工厂
+         * 注意：AVF在Android上不可用，此方法已重构为使用QEMU
          *
-         * @param avfVmAdapter AVF虚拟机适配器
+         * @param qemuVmAdapter QEMU虚拟机适配器
          * @param scope 协程作用域
-         * @return AVF Docker Provider工厂实例
+         * @return AVF Docker Provider工厂实例（实际使用QEMU）
          */
         @Provides
         @Singleton
         @Named("AvfFactory")
         fun provideAvfDockerProviderFactory(
-            avfVmAdapter: AvfVmAdapter,
+            qemuVmAdapter: QemuVmAdapter,
             @Named("DockerScope") scope: CoroutineScope
         ): AvfDockerProviderFactory {
             return object : AvfDockerProviderFactory {
@@ -221,54 +220,28 @@ abstract class DockerModule {
                         )
 
                     return try {
-                        val provider = createAvfProvider(avfConfig, avfVmAdapter)
-                        Result.success(provider)
+                        // AVF在Android上不可用，返回失败
+                        Result.failure(UnsupportedOperationException("AVF is not available on Android"))
                     } catch (e: Exception) {
                         Result.failure(e)
                     }
                 }
 
                 override suspend fun isProviderAvailable(): Boolean {
-                    return avfVmAdapter.isAvfAvailable()
+                    // AVF在Android上不可用
+                    return false
                 }
 
                 override fun getPriority(): Int = 20 // AVF优先级更高
 
                 override suspend fun isAvfAvailable(): Boolean {
-                    return avfVmAdapter.isAvfAvailable()
+                    // AVF在Android上不可用
+                    return false
                 }
 
                 override fun getMacOsVersion(): String? {
-                    return avfVmAdapter.getMacOsVersion()
-                }
-
-                private fun createAvfProvider(
-                    config: AvfDockerProviderConfig,
-                    adapter: AvfVmAdapter
-                ): DockerProvider {
-                    // Docker客户端工厂函数
-                    // 注意：需要DockerClient实现类支持Vsock连接
-                    val dockerClientFactory: (VsockChannelConfig) -> DockerClient = { vsockConfig ->
-                        // TODO: 实现DockerClient的Vsock连接创建
-                        // 实际实现需要DockerClientImpl类支持
-                        throw NotImplementedError("DockerClient Vsock implementation required")
-                    }
-
-                    val providerClass = Class.forName(
-                        "com.dfa.core.docker.provider.AvfDockerProviderImpl"
-                    )
-                    val constructor = providerClass.getConstructor(
-                        AvfDockerProviderConfig::class.java,
-                        AvfVmAdapter::class.java,
-                        Function1::class.java,
-                        CoroutineScope::class.java
-                    )
-                    return constructor.newInstance(
-                        config,
-                        adapter,
-                        dockerClientFactory,
-                        factoryScope
-                    ) as DockerProvider
+                    // Android不是macOS
+                    return null
                 }
             }
         }

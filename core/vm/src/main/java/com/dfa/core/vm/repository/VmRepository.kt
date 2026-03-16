@@ -2,6 +2,7 @@ package com.dfa.core.vm.repository
 
 import com.dfa.core.vm.AvfVmHandle
 import com.dfa.core.vm.VmConfig
+import com.dfa.core.vm.VmHandle
 import com.dfa.core.vm.VmInfo
 import com.dfa.core.vm.VmState
 import kotlinx.coroutines.flow.Flow
@@ -56,7 +57,7 @@ interface VmRepository {
      * @param vmId 虚拟机ID
      * @param handle 虚拟机句柄
      */
-    suspend fun saveVmHandle(vmId: String, handle: AvfVmHandle)
+    suspend fun saveVmHandle(vmId: String, handle: VmHandle)
     
     /**
      * 获取虚拟机句柄
@@ -64,7 +65,7 @@ interface VmRepository {
      * @param vmId 虚拟机ID
      * @return 虚拟机句柄，不存在则返回null
      */
-    suspend fun getVmHandle(vmId: String): AvfVmHandle?
+    suspend fun getVmHandle(vmId: String): VmHandle?
     
     /**
      * 删除虚拟机句柄

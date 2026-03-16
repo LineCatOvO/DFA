@@ -28,6 +28,7 @@ import com.dfa.core.vm.qemu.QemuMonitor
 import com.dfa.core.vm.qemu.QemuMonitorImpl
 import com.dfa.core.vm.qemu.QemuProcessManager
 import com.dfa.core.vm.qemu.QemuProcessManagerImpl
+import com.dfa.core.vm.termux.TermuxConfig
 import com.dfa.core.vm.qemu.QemuVmAdapter
 import com.dfa.core.vm.qemu.QemuVmAdapterImpl
 import com.dfa.core.vm.repository.VmRepository
@@ -401,34 +402,15 @@ abstract class VmModule {
         }
 
         /**
-         * 提供SocketChannelFactory实例
-         */
-        @Provides
-        @Singleton
-        fun provideSocketChannelFactory(): SocketChannelFactory {
-            return SocketChannelFactory()
-        }
-
-        /**
          * 提供QemuVmAdapterImpl实例
          */
         @Provides
         @Singleton
         fun provideQemuVmAdapterImpl(
-            processManager: QemuProcessManager,
-            monitor: QemuMonitor,
-            sshChannel: SshChannel,
-            socketChannel: SocketChannel,
-            socketChannelFactory: SocketChannelFactory,
-            @ApplicationContext context: Context
+            processManager: QemuProcessManager
         ): QemuVmAdapterImpl {
             return QemuVmAdapterImpl(
-                processManager = processManager,
-                monitor = monitor,
-                sshChannel = sshChannel,
-                socketChannel = socketChannel,
-                socketChannelFactory = socketChannelFactory,
-                context = context
+                processManager = processManager
             )
         }
 
@@ -437,10 +419,8 @@ abstract class VmModule {
          */
         @Provides
         @Singleton
-        fun provideTermuxBridgeImpl(
-            @ApplicationContext context: Context
-        ): TermuxBridgeImpl {
-            return TermuxBridgeImpl(context)
+        fun provideTermuxBridgeImpl(): TermuxBridgeImpl {
+            return TermuxBridgeImpl(TermuxConfig.DEFAULT)
         }
 
         /**

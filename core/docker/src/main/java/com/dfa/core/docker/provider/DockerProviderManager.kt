@@ -93,15 +93,6 @@ interface DockerProviderManager {
     fun getProvider(providerId: String): DockerProvider?
 
     /**
-     * 获取活动的Provider
-     *
-     * 返回当前活动的Provider实例。
-     *
-     * @return 活动的Provider实例，如果没有则返回null
-     */
-    fun getActiveProvider(): DockerProvider?
-
-    /**
      * 获取所有Provider列表
      *
      * @return 所有已注册的Provider列表

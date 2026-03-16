@@ -1,6 +1,7 @@
 package com.dfa.core.docker.provider
 
 import com.dfa.core.docker.DockerClient
+import com.dfa.core.vm.VmConfig
 import com.dfa.core.vm.VmHandle
 import com.dfa.core.vm.channel.SshAuthMethod
 import com.dfa.core.vm.channel.SshChannelConfig
@@ -135,10 +136,10 @@ class QemuDockerProviderImpl(
             }
 
             // 创建虚拟机配置
-            val qemuConfig = createQemuConfig()
+            val vmConfig = createVmConfig()
 
             // 创建虚拟机
-            val createResult = qemuVmAdapter.createVm(qemuConfig)
+            val createResult = qemuVmAdapter.createVm(vmConfig)
             if (createResult.isFailure) {
                 throw ProviderInitializationException(
                     providerId = providerId,
@@ -519,7 +520,21 @@ class QemuDockerProviderImpl(
     // ==================== 私有辅助方法 ====================
 
     /**
-     * 创建QEMU虚拟机配置
+     * 创建虚拟机配置
+     */
+    private fun createVmConfig(): VmConfig {
+        return VmConfig(
+            id = config.vmId,
+            name = "docker-${config.providerId}",
+            memory = config.memoryMB,
+            cpu = config.cpus,
+            diskSize = config.diskSizeGB,
+            bootImage = null // 镜像路径将在QEMU配置中设置
+        )
+    }
+
+    /**
+     * 创建QEMU虚拟机配置（保留用于QEMU特定配置）
      */
     private fun createQemuConfig(): QemuConfig {
         return QemuConfig.Builder()
