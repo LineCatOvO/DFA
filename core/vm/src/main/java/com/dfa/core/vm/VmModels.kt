@@ -89,6 +89,13 @@ data class VmConfig(
 )
 
 /**
+ * QEMU虚拟机句柄类型别名
+ * 
+ * 为了向后兼容，QemuVmHandle是VmHandle的类型别名
+ */
+typealias QemuVmHandle = VmHandle
+
+/**
  * 虚拟机信息
  */
 data class VmInfo(
@@ -96,7 +103,7 @@ data class VmInfo(
     val state: VmState,
     val ipAddress: String? = null,
     val uptime: Long = 0,
-    val handle: AvfVmHandle? = null,
+    val handle: VmHandle? = null,
     val errorMessage: String? = null
 ) {
     val isRunning: Boolean
