@@ -1,7 +1,5 @@
 package com.dfa.core.vm
 
-import com.dfa.core.vm.avf.AvfResources
-
 /**
  * 通用虚拟机资源信息
  *
@@ -150,32 +148,3 @@ enum class VmFeature {
     /** 压缩内存 */
     MEMORY_BALLOONING
 }
-
-/**
- * VmResources扩展函数：转换为AvfResources（向后兼容）
- */
-fun VmResources.toAvfResources(): AvfResources = AvfResources(
-    totalMemoryMb = totalMemoryMb,
-    availableMemoryMb = availableMemoryMb,
-    totalCpuCores = totalCpuCores,
-    availableCpuCores = availableCpuCores,
-    totalDiskSpaceGb = totalDiskSpaceGb,
-    availableDiskSpaceGb = availableDiskSpaceGb,
-    gpuAvailable = gpuAvailable,
-    gpuMemoryMb = gpuMemoryMb
-)
-
-/**
- * AvfResources扩展函数：转换为VmResources
- */
-fun AvfResources.toVmResources(): VmResources = VmResources(
-    backendType = VmBackendType.AVF,
-    totalMemoryMb = totalMemoryMb,
-    availableMemoryMb = availableMemoryMb,
-    totalCpuCores = totalCpuCores,
-    availableCpuCores = availableCpuCores,
-    totalDiskSpaceGb = totalDiskSpaceGb,
-    availableDiskSpaceGb = availableDiskSpaceGb,
-    gpuAvailable = gpuAvailable,
-    gpuMemoryMb = gpuMemoryMb
-)

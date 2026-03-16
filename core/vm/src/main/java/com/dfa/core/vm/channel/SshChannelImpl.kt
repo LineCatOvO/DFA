@@ -325,7 +325,7 @@ class SshChannelImpl @Inject constructor() : SshChannel {
 
                 // 创建执行通道
                 val channel = session.openChannel("exec") as ChannelExec
-                channel.command = command
+                channel.setCommand(command)
 
                 // 设置环境变量
                 environment.forEach { (key, value) ->
@@ -335,8 +335,8 @@ class SshChannelImpl @Inject constructor() : SshChannel {
                 // 获取输出流
                 val stdoutStream = ByteArrayOutputStream()
                 val stderrStream = ByteArrayOutputStream()
-                channel.outputStream = stdoutStream
-                channel.errStream = stderrStream
+                channel.setOutputStream(stdoutStream)
+                channel.setExtOutputStream(stderrStream)
 
                 // 执行命令
                 channel.connect(_config?.timeoutConfig?.connectionTimeoutMs?.toInt() ?: 30000)
@@ -353,7 +353,7 @@ class SshChannelImpl @Inject constructor() : SshChannel {
                     stdout = stdoutStream.toString("UTF-8"),
                     stderr = stderrStream.toString("UTF-8"),
                     executionTimeMs = executionTime,
-                    signal = channel.exitSignal
+                    signal = null // exitSignal在JSch中不可直接访问
                 )
 
                 channel.disconnect()
@@ -398,15 +398,15 @@ class SshChannelImpl @Inject constructor() : SshChannel {
 
                 // 创建执行通道
                 val channel = session.openChannel("exec") as ChannelExec
-                channel.command = command
+                channel.setCommand(command)
                 channel.setPty(true) // 分配伪终端
 
                 // 获取流
-                val outputStream = channel.outputStream
+                val outputStream = channel.getOutputStream()
                 val stdoutStream = ByteArrayOutputStream()
                 val stderrStream = ByteArrayOutputStream()
-                channel.outputStream = stdoutStream
-                channel.errStream = stderrStream
+                channel.setOutputStream(stdoutStream)
+                channel.setExtOutputStream(stderrStream)
 
                 // 连接
                 channel.connect(_config?.timeoutConfig?.connectionTimeoutMs?.toInt() ?: 30000)
@@ -433,7 +433,7 @@ class SshChannelImpl @Inject constructor() : SshChannel {
                     stdout = stdoutStream.toString("UTF-8"),
                     stderr = stderrStream.toString("UTF-8"),
                     executionTimeMs = executionTime,
-                    signal = channel.exitSignal
+                    signal = null // exitSignal在JSch中不可直接访问
                 )
 
                 channel.disconnect()
@@ -822,7 +822,7 @@ class SshChannelImpl @Inject constructor() : SshChannel {
             val tunnelId = UUID.randomUUID().toString()
 
             // 设置动态端口转发（SOCKS代理）
-            session.setPortForwardingD(localPort)
+            session.setPortForwardingD("127.0.0.1", localPort)
 
             val tunnel = SshTunnel(
                 tunnelId = tunnelId,
@@ -906,7 +906,7 @@ class SshChannelImpl @Inject constructor() : SshChannel {
 
             // 创建Shell通道
             val channel = session.openChannel("shell") as ChannelShell
-            channel.ptyType = terminalType
+            channel.setPtyType(terminalType)
             channel.setPtySize(cols, rows, cols * 8, rows * 8)
 
             val shell = SshShellImpl(
@@ -944,7 +944,7 @@ class SshChannelImpl @Inject constructor() : SshChannel {
                     host = host,
                     port = sshPort,
                     keyType = hostKey.type,
-                    fingerprint = hostKey.fingerPrint,
+                    fingerprint = hostKey.getFingerPrint(_jsch?.hashKnownHosts ?: false),
                     fingerprintAlgorithm = "SHA256"
                 )
             )
@@ -1037,7 +1037,7 @@ class SshChannelImpl @Inject constructor() : SshChannel {
         // 设置密码（如果是密码认证）
         when (val auth = config.authMethod) {
             is SshAuthMethod.Password -> {
-                session.password = auth.password
+                session.setPassword(auth.password)
             }
             else -> {
                 // 密钥认证已在setupAuthentication中配置
@@ -1054,7 +1054,7 @@ class SshChannelImpl @Inject constructor() : SshChannel {
 
         // 已知主机文件
         config.securityConfig.knownHostsPath?.let {
-            _jsch?.knownHosts = it
+            _jsch?.setKnownHosts(it)
         }
 
         // 首选算法

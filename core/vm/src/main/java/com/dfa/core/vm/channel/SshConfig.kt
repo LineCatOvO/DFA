@@ -209,7 +209,7 @@ class SshChannelConfig(
     /**
      * 验证配置有效性
      */
-    fun validate(): Boolean {
+    override fun validate(): Boolean {
         if (host.isBlank()) return false
         if (port <= 0 || port > 65535) return false
         return when (authMethod) {

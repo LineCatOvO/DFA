@@ -1,7 +1,7 @@
 package com.dfa.core.vm.communication
 
-import com.dfa.core.vm.channel.VirtIOChannelImpl
-import com.dfa.core.vm.channel.VsockChannelImpl
+import com.dfa.core.vm.channel.SshChannelImpl
+import com.dfa.core.vm.channel.SocketChannelImpl
 import com.dfa.core.vm.protocol.MessageCodec
 import com.dfa.core.vm.protocol.MessageCodecImpl
 import com.dfa.core.vm.protocol.MessageWrapper
@@ -190,12 +190,13 @@ class CommunicationManagerImpl @Inject constructor(
 
     private fun createChannel(config: ChannelConfig): CommunicationChannel {
         return when (config.type) {
-            ChannelType.VIRTIO_SERIAL -> VirtIOChannelImpl()
-            ChannelType.VSOCK -> VsockChannelImpl()
-            ChannelType.SHARED_MEMORY -> {
-                // 共享内存通道暂未实现，使用VirtIO作为后备
-                VirtIOChannelImpl()
-            }
+            ChannelType.SSH -> SshChannelImpl()
+            ChannelType.SOCKET_UNIX -> SocketChannelImpl()
+            ChannelType.SOCKET_TCP -> SocketChannelImpl()
+            // 旧架构的通道类型，使用SSH作为后备
+            ChannelType.VIRTIO_SERIAL -> SshChannelImpl()
+            ChannelType.VSOCK -> SshChannelImpl()
+            ChannelType.SHARED_MEMORY -> SshChannelImpl()
         }
     }
 
