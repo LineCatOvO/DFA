@@ -52,6 +52,12 @@ enum class QemuProcessState {
      */
     val canResume: Boolean
         get() = this == PAUSED
+
+    /**
+     * 检查进程是否处于停止过渡状态
+     */
+    val isStopTransition: Boolean
+        get() = this in listOf(STOPPING, STOPPED, CRASHED)
 }
 
 /**

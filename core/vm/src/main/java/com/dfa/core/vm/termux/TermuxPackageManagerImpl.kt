@@ -72,7 +72,7 @@ class TermuxPackageManagerImpl(
                 if (executionResult.isSuccess) {
                     val packages = executionResult.stdout.lines()
                         .filter { it.isNotBlank() }
-                        .map { PackageInfo(name = it) }
+                        .map { PackageInfo(name = it, version = "") }
 
                     _state.value = PackageManagerState.Idle
                     packages
@@ -1083,7 +1083,7 @@ class TermuxPackageManagerImpl(
     /**
      * 解析详细包信息
      */
-    private fun parseDetailedPackageInfo(output: String, packageName: String): PackageDetailedInfo {
+    private suspend fun parseDetailedPackageInfo(output: String, packageName: String): PackageDetailedInfo {
         var version = ""
         var description = ""
         var architecture = ""

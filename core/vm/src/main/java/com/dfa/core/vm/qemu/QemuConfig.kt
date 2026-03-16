@@ -450,6 +450,7 @@ data class QemuConfig(
     val enableGpu: Boolean = false,
     val monitorPath: String? = null,
     val qemuPath: String? = null,
+    val workingDirectory: String? = null,
     val extraArgs: List<String> = emptyList()
 ) {
     /**

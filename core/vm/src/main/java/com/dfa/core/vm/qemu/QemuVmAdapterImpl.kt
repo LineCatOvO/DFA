@@ -978,16 +978,10 @@ class QemuVmAdapterImpl(
     }
 
     /**
-     * 转换VmHandle到AvfVmHandle
+     * 转换VmHandle（保持原样，用于类型兼容）
      */
-    private fun convertToAvfHandle(handle: VmHandle): AvfVmHandle {
-        return AvfVmHandle(
-            vmId = handle.vmId,
-            processId = handle.processId,
-            socketPath = handle.socketPath,
-            createdAt = handle.createdAt,
-            lastUpdated = handle.lastUpdated
-        )
+    private fun convertToAvfHandle(handle: VmHandle): VmHandle {
+        return handle
     }
 
     /**
@@ -1017,7 +1011,7 @@ class QemuVmAdapterImpl(
     private fun notifyStateChanged(vmId: String, oldState: VmState, newState: VmState) {
         callbacks.forEach { callback ->
             try {
-                callback.onStateChanged(vmId, oldState, newState)
+                callback.onStateChanged(newState)
             } catch (e: Exception) {
                 // 忽略回调错误
             }
@@ -1030,7 +1024,7 @@ class QemuVmAdapterImpl(
     private fun notifyError(vmId: String, error: VmError) {
         callbacks.forEach { callback ->
             try {
-                callback.onError(vmId, error)
+                callback.onError(error)
             } catch (e: Exception) {
                 // 忽略回调错误
             }
@@ -1043,7 +1037,7 @@ class QemuVmAdapterImpl(
     private fun notifyVmDestroyed(vmId: String) {
         callbacks.forEach { callback ->
             try {
-                callback.onVmDestroyed(vmId)
+                callback.onVmDestroyed()
             } catch (e: Exception) {
                 // 忽略回调错误
             }
