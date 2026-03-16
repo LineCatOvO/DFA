@@ -1,6 +1,7 @@
 package com.dfa.core.vm.termux
 
-import com.google.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertThat
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -455,7 +456,7 @@ class TermuxBridgeTest {
     @Test
     fun `TermuxBridge isTermuxAvailable should return boolean`() = runTest {
         val mockBridge = mockk<TermuxBridge>()
-        every { mockBridge.isTermuxAvailable() } returns true
+        coEvery { mockBridge.isTermuxAvailable() } returns true
 
         val result = mockBridge.isTermuxAvailable()
 
@@ -465,7 +466,7 @@ class TermuxBridgeTest {
     @Test
     fun `TermuxBridge isTermuxInstalled should return boolean`() = runTest {
         val mockBridge = mockk<TermuxBridge>()
-        every { mockBridge.isTermuxInstalled() } returns true
+        coEvery { mockBridge.isTermuxInstalled() } returns true
 
         val result = mockBridge.isTermuxInstalled()
 
@@ -475,7 +476,7 @@ class TermuxBridgeTest {
     @Test
     fun `TermuxBridge isTermuxApiInstalled should return boolean`() = runTest {
         val mockBridge = mockk<TermuxBridge>()
-        every { mockBridge.isTermuxApiInstalled() } returns false
+        coEvery { mockBridge.isTermuxApiInstalled() } returns false
 
         val result = mockBridge.isTermuxApiInstalled()
 

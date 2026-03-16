@@ -5,7 +5,9 @@ import com.dfa.core.vm.communication.ChannelType
 import com.dfa.core.vm.communication.CommunicationManagerImpl
 import com.dfa.core.vm.communication.CommunicationState
 import com.dfa.core.vm.protocol.MessageCodecImpl
-import com.google.truth.Truth.assertThat
+import com.dfa.core.vm.protocol.Request
+import com.dfa.core.vm.protocol.RequestMethod
+import org.junit.Assert.*
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -30,12 +32,12 @@ class CommunicationIntegrationTest {
 
     @Test
     fun `manager should start in DISCONNECTED state`() = runTest {
-        assertThat(manager.state.value).isEqualTo(CommunicationState.DISCONNECTED)
+        assertEquals(CommunicationState.DISCONNECTED, manager.state.value)
     }
 
     @Test
     fun `manager should not be initialized initially`() = runTest {
-        assertThat(manager.isInitialized.value).isFalse()
+        assertFalse(manager.isInitialized.value)
     }
 
     // ==================== Channel Configuration Tests ====================
@@ -47,7 +49,7 @@ class CommunicationIntegrationTest {
             path = "/dev/vport0p1"
         )
 
-        assertThat(config.validate()).isTrue()
+        assertTrue(config.validate())
     }
 
     @Test
@@ -57,19 +59,26 @@ class CommunicationIntegrationTest {
             path = null // Invalid: path required
         )
 
-        assertThat(config.validate()).isFalse()
+        assertFalse(config.validate())
     }
 
     // ==================== Message Codec Tests ====================
 
     @Test
-    fun `message codec should encode and decode correctly`() = runTest {
-        val originalMessage = "Test message for integration"
-        val encoded = messageCodec.encode(originalMessage)
-        val decoded = messageCodec.decode<String>(encoded)
-
-        assertThat(decoded.isSuccess).isTrue()
-        assertThat(decoded.getOrNull()).isEqualTo(originalMessage)
+    fun `message codec should encode and decode request correctly`() = runTest {
+        val request = Request(
+            messageId = "test-id",
+            method = RequestMethod.VM_START,
+            sourceId = "host",
+            targetId = "vm"
+        )
+        
+        val encoded = messageCodec.encodeRequest(request)
+        assertTrue(encoded.isSuccess)
+        
+        val decoded = messageCodec.decodeRequest(encoded.getOrThrow())
+        assertTrue(decoded.isSuccess)
+        assertEquals(RequestMethod.VM_START, decoded.getOrNull()?.body?.method)
     }
 
     // ==================== Error Handling Tests ====================
@@ -78,14 +87,14 @@ class CommunicationIntegrationTest {
     fun `initialize with empty configs should fail`() = runTest {
         val result = manager.initialize(emptyList())
 
-        assertThat(result.isFailure).isTrue()
+        assertTrue(result.isFailure)
     }
 
     @Test
     fun `send to non-existent channel should fail`() = runTest {
         val result = manager.send("non-existent", byteArrayOf(1, 2, 3))
 
-        assertThat(result.isFailure).isTrue()
+        assertTrue(result.isFailure)
     }
 
     // ==================== State Management Tests ====================
@@ -94,9 +103,9 @@ class CommunicationIntegrationTest {
     fun `release should reset all state`() = runTest {
         manager.release()
 
-        assertThat(manager.state.value).isEqualTo(CommunicationState.DISCONNECTED)
-        assertThat(manager.isInitialized.value).isFalse()
-        assertThat(manager.activeConnections.value).isEmpty()
+        assertEquals(CommunicationState.DISCONNECTED, manager.state.value)
+        assertFalse(manager.isInitialized.value)
+        assertTrue(manager.activeConnections.value.isEmpty())
     }
 
     // ==================== Broadcast Tests ====================
@@ -105,7 +114,7 @@ class CommunicationIntegrationTest {
     fun `broadcast with no channels should return empty map`() = runTest {
         val results = manager.broadcast(byteArrayOf(1, 2, 3))
 
-        assertThat(results).isEmpty()
+        assertTrue(results.isEmpty())
     }
 
     // ==================== Connection Management Tests ====================
@@ -114,13 +123,13 @@ class CommunicationIntegrationTest {
     fun `getChannel should return null for non-existent channel`() = runTest {
         val channel = manager.getChannel("non-existent")
 
-        assertThat(channel).isNull()
+        assertNull(channel)
     }
 
     @Test
     fun `getActiveChannels should return empty list initially`() = runTest {
         val channels = manager.getActiveChannels()
 
-        assertThat(channels).isEmpty()
+        assertTrue(channels.isEmpty())
     }
 }

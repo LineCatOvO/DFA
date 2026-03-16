@@ -3,7 +3,7 @@ package com.dfa.core.vm.storage
 import com.dfa.core.vm.storage.models.CleanupOptions
 import com.dfa.core.vm.storage.models.StorageConfig
 import com.dfa.core.vm.storage.models.StorageType
-import com.google.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

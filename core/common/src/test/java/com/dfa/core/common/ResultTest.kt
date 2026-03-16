@@ -1,6 +1,6 @@
 package com.dfa.core.common
 
-import com.google.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 /**
@@ -12,16 +12,16 @@ class ResultTest {
     fun `Success isSuccess should return true`() {
         val result = Result.Success("data")
 
-        assertThat(result.isSuccess).isTrue()
-        assertThat(result.isError).isFalse()
+        assertThat(result.isSuccess as Boolean).isTrue()
+        assertThat(result.isError as Boolean).isFalse()
     }
 
     @Test
     fun `Error isError should return true`() {
         val result = Result.Error(RuntimeException("error"))
 
-        assertThat(result.isError).isTrue()
-        assertThat(result.isSuccess).isFalse()
+        assertThat(result.isError as Boolean).isTrue()
+        assertThat(result.isSuccess as Boolean).isFalse()
     }
 
     @Test
@@ -35,14 +35,14 @@ class ResultTest {
     fun `Error getOrNull should return null`() {
         val result = Result.Error(RuntimeException("error"))
 
-        assertThat(result.getOrNull()).isNull()
+        assertThat(result.getOrNull() as Any?).isNull()
     }
 
     @Test
     fun `Success exceptionOrNull should return null`() {
         val result = Result.Success("data")
 
-        assertThat(result.exceptionOrNull()).isNull()
+        assertThat(result.exceptionOrNull() as Throwable?).isNull()
     }
 
     @Test

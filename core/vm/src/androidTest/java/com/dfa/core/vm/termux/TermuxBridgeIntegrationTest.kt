@@ -3,7 +3,7 @@ package com.dfa.core.vm.termux
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import com.google.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before

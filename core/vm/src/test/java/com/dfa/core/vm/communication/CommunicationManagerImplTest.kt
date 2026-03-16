@@ -1,7 +1,7 @@
 package com.dfa.core.vm.communication
 
 import com.dfa.core.vm.protocol.MessageCodec
-import com.google.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertThat
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest

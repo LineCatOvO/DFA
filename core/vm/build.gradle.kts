@@ -65,6 +65,6 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation("app.cash.turbine:turbine:1.0.0")
-    testImplementation("com.google.truth:truth:1.1.3")
+    testImplementation(libs.turbine)
+    testImplementation(libs.truth)
 }

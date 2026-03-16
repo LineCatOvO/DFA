@@ -1,6 +1,6 @@
 package com.dfa.core.vm.image
 
-import com.google.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Before

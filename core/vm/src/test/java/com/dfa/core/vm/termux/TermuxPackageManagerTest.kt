@@ -1,6 +1,7 @@
 package com.dfa.core.vm.termux
 
-import com.google.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertThat
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -368,7 +369,7 @@ class TermuxPackageManagerTest {
             PackageInfo("package1", "1.0.0"),
             PackageInfo("package2", "2.0.0")
         )
-        every { mockManager.listPackages() } returns Result.success(packages)
+        coEvery { mockManager.listPackages() } returns Result.success(packages)
 
         val result = mockManager.listPackages()
 
@@ -380,7 +381,7 @@ class TermuxPackageManagerTest {
     fun `TermuxPackageManager searchPackages should return matching packages`() = runTest {
         val mockManager = mockk<TermuxPackageManager>()
         val packages = listOf(PackageInfo("python", "3.11.0"))
-        every { mockManager.searchPackages("python") } returns Result.success(packages)
+        coEvery { mockManager.searchPackages("python") } returns Result.success(packages)
 
         val result = mockManager.searchPackages("python")
 
@@ -395,7 +396,7 @@ class TermuxPackageManagerTest {
             PackageInfo("bash", "5.0", isInstalled = true),
             PackageInfo("coreutils", "9.0", isInstalled = true)
         )
-        every { mockManager.listInstalledPackages() } returns Result.success(packages)
+        coEvery { mockManager.listInstalledPackages() } returns Result.success(packages)
 
         val result = mockManager.listInstalledPackages()
 
@@ -406,8 +407,8 @@ class TermuxPackageManagerTest {
     @Test
     fun `TermuxPackageManager isPackageInstalled should return boolean`() = runTest {
         val mockManager = mockk<TermuxPackageManager>()
-        every { mockManager.isPackageInstalled("bash") } returns true
-        every { mockManager.isPackageInstalled("nonexistent") } returns false
+        coEvery { mockManager.isPackageInstalled("bash") } returns true
+        coEvery { mockManager.isPackageInstalled("nonexistent") } returns false
 
         assertThat(mockManager.isPackageInstalled("bash")).isTrue()
         assertThat(mockManager.isPackageInstalled("nonexistent")).isFalse()
@@ -420,7 +421,7 @@ class TermuxPackageManagerTest {
             operationType = PackageOperationResult.OperationType.INSTALL,
             packageName = "test-package"
         )
-        every { mockManager.install("test-package") } returns Result.success(successResult)
+        coEvery { mockManager.install("test-package") } returns Result.success(successResult)
 
         val result = mockManager.install("test-package")
 
@@ -435,7 +436,7 @@ class TermuxPackageManagerTest {
             operationType = PackageOperationResult.OperationType.UNINSTALL,
             packageName = "test-package"
         )
-        every { mockManager.uninstall("test-package", false) } returns Result.success(successResult)
+        coEvery { mockManager.uninstall("test-package", false) } returns Result.success(successResult)
 
         val result = mockManager.uninstall("test-package")
 
@@ -449,7 +450,7 @@ class TermuxPackageManagerTest {
             operationType = PackageOperationResult.OperationType.UPGRADE_ALL,
             packageName = "all"
         )
-        every { mockManager.upgradeAll() } returns Result.success(successResult)
+        coEvery { mockManager.upgradeAll() } returns Result.success(successResult)
 
         val result = mockManager.upgradeAll()
 
@@ -463,7 +464,7 @@ class TermuxPackageManagerTest {
             operationType = PackageOperationResult.OperationType.UPDATE_INDEX,
             packageName = ""
         )
-        every { mockManager.updatePackageIndex() } returns Result.success(successResult)
+        coEvery { mockManager.updatePackageIndex() } returns Result.success(successResult)
 
         val result = mockManager.updatePackageIndex()
 
@@ -476,7 +477,7 @@ class TermuxPackageManagerTest {
         val repos = listOf(
             RepositoryInfo("main", "https://packages.termux.org/main", true)
         )
-        every { mockManager.listRepositories() } returns Result.success(repos)
+        coEvery { mockManager.listRepositories() } returns Result.success(repos)
 
         val result = mockManager.listRepositories()
 
@@ -487,7 +488,7 @@ class TermuxPackageManagerTest {
     @Test
     fun `TermuxPackageManager cleanCache should return success`() = runTest {
         val mockManager = mockk<TermuxPackageManager>()
-        every { mockManager.cleanCache() } returns Result.success(Unit)
+        coEvery { mockManager.cleanCache() } returns Result.success(Unit)
 
         val result = mockManager.cleanCache()
 
@@ -497,7 +498,7 @@ class TermuxPackageManagerTest {
     @Test
     fun `TermuxPackageManager getCacheSize should return size`() = runTest {
         val mockManager = mockk<TermuxPackageManager>()
-        every { mockManager.getCacheSize() } returns Result.success(1024 * 1024 * 100L)
+        coEvery { mockManager.getCacheSize() } returns Result.success(1024 * 1024 * 100L)
 
         val result = mockManager.getCacheSize()
 
@@ -508,11 +509,7 @@ class TermuxPackageManagerTest {
     @Test
     fun `TermuxPackageManager fixBrokenDependencies should return result`() = runTest {
         val mockManager = mockk<TermuxPackageManager>()
-        val successResult = PackageOperationResult.success(
-            operationType = PackageOperationResult.OperationType.FIX_DEPENDENCIES,
-            packageName = ""
-        )
-        every { mockManager.fixBrokenDependencies() } returns Result.success(successResult)
+        coEvery { mockManager.fixBrokenDependencies() } returns Result.success(Unit)
 
         val result = mockManager.fixBrokenDependencies()
 

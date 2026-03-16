@@ -6,7 +6,7 @@ import androidx.test.filters.SdkSuppress
 import com.dfa.core.vm.communication.ChannelConfig
 import com.dfa.core.vm.communication.ChannelType
 import com.dfa.core.vm.communication.CommunicationState
-import com.google.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After

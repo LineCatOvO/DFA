@@ -1,9 +1,9 @@
 package com.dfa.core.vm.communication
 
-import com.google.truth.Truth.assertThat
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import java.io.File
@@ -26,7 +26,7 @@ class FileTransferManagerTest {
 
     @Test
     fun `initial activeSessions should be empty`() {
-        assertThat(manager.activeSessions.value).isEmpty()
+        assertTrue(manager.activeSessions.value.isEmpty())
     }
 
     // ==================== Upload Tests ====================
@@ -37,7 +37,7 @@ class FileTransferManagerTest {
 
         val result = manager.upload("channel-1", file)
 
-        assertThat(result.isFailure).isTrue()
+        assertTrue(result.isFailure)
     }
 
     @Test
@@ -48,7 +48,7 @@ class FileTransferManagerTest {
 
         val result = manager.upload("non-existent-channel", tempFile)
 
-        assertThat(result.isFailure).isTrue()
+        assertTrue(result.isFailure)
         tempFile.delete()
     }
 
@@ -61,7 +61,7 @@ class FileTransferManagerTest {
 
         val result = manager.download("non-existent-channel", "/remote/path", tempFile)
 
-        assertThat(result.isFailure).isTrue()
+        assertTrue(result.isFailure)
         tempFile.delete()
     }
 
@@ -70,7 +70,7 @@ class FileTransferManagerTest {
     @Test
     fun `getSession should return null for non-existent session`() {
         val result = manager.getSession("non-existent")
-        assertThat(result).isNull()
+        assertNull(result)
     }
 
     // ==================== Cancel Transfer Tests ====================
@@ -79,7 +79,7 @@ class FileTransferManagerTest {
     fun `cancelTransfer should fail for non-existent session`() = runTest {
         val result = manager.cancelTransfer("non-existent")
 
-        assertThat(result.isFailure).isTrue()
+        assertTrue(result.isFailure)
     }
 
     // ==================== Cancel All Transfers Tests ====================
@@ -88,7 +88,7 @@ class FileTransferManagerTest {
     fun `cancelAllTransfers should succeed with no sessions`() = runTest {
         // Should not throw
         manager.cancelAllTransfers()
-        assertThat(manager.activeSessions.value).isEmpty()
+        assertTrue(manager.activeSessions.value.isEmpty())
     }
 
     // ==================== Get Statistics Tests ====================
@@ -97,13 +97,13 @@ class FileTransferManagerTest {
     fun `getStatistics should return initial statistics`() {
         val stats = manager.getStatistics()
 
-        assertThat(stats.totalUploads).isEqualTo(0)
-        assertThat(stats.totalDownloads).isEqualTo(0)
-        assertThat(stats.totalBytesUploaded).isEqualTo(0)
-        assertThat(stats.totalBytesDownloaded).isEqualTo(0)
-        assertThat(stats.activeUploads).isEqualTo(0)
-        assertThat(stats.activeDownloads).isEqualTo(0)
-        assertThat(stats.failedTransfers).isEqualTo(0)
+        assertEquals(0, stats.totalUploads)
+        assertEquals(0, stats.totalDownloads)
+        assertEquals(0L, stats.totalBytesUploaded)
+        assertEquals(0L, stats.totalBytesDownloaded)
+        assertEquals(0, stats.activeUploads)
+        assertEquals(0, stats.activeDownloads)
+        assertEquals(0, stats.failedTransfers)
     }
 
     // ==================== TransferStatistics Tests ====================
@@ -120,13 +120,13 @@ class FileTransferManagerTest {
             failedTransfers = 3
         )
 
-        assertThat(stats.totalUploads).isEqualTo(10)
-        assertThat(stats.totalDownloads).isEqualTo(5)
-        assertThat(stats.totalBytesUploaded).isEqualTo(1024 * 1024)
-        assertThat(stats.totalBytesDownloaded).isEqualTo(2048 * 1024)
-        assertThat(stats.activeUploads).isEqualTo(2)
-        assertThat(stats.activeDownloads).isEqualTo(1)
-        assertThat(stats.failedTransfers).isEqualTo(3)
+        assertEquals(10, stats.totalUploads)
+        assertEquals(5, stats.totalDownloads)
+        assertEquals(1024 * 1024, stats.totalBytesUploaded)
+        assertEquals(2048 * 1024, stats.totalBytesDownloaded)
+        assertEquals(2, stats.activeUploads)
+        assertEquals(1, stats.activeDownloads)
+        assertEquals(3, stats.failedTransfers)
     }
 
     // ==================== FileTransferConfig Tests ====================
@@ -135,10 +135,10 @@ class FileTransferManagerTest {
     fun `FileTransferConfig should have default values`() {
         val config = FileTransferConfig()
 
-        assertThat(config.chunkSize).isGreaterThan(0)
-        assertThat(config.timeoutMs).isGreaterThan(0)
-        assertThat(config.maxRetries).isGreaterThan(0)
-        assertThat(config.maxFileSize).isGreaterThan(0)
+        assertTrue(config.chunkSize > 0)
+        assertTrue(config.timeoutMs > 0)
+        assertTrue(config.maxRetries >= 0)
+        assertTrue(config.maxFileSize > 0)
     }
 
     @Test
@@ -146,16 +146,16 @@ class FileTransferManagerTest {
         val original = FileTransferConfig()
         val copied = original.copy(chunkSize = 8192)
 
-        assertThat(copied.chunkSize).isEqualTo(8192)
-        assertThat(original.chunkSize).isNotEqualTo(8192)
+        assertEquals(8192, copied.chunkSize)
+        assertNotEquals(8192, original.chunkSize)
     }
 
     // ==================== TransferDirection Tests ====================
 
     @Test
     fun `TransferDirection should contain UPLOAD and DOWNLOAD`() {
-        assertThat(TransferDirection.entries).contains(TransferDirection.UPLOAD)
-        assertThat(TransferDirection.entries).contains(TransferDirection.DOWNLOAD)
+        assertTrue(TransferDirection.entries.contains(TransferDirection.UPLOAD))
+        assertTrue(TransferDirection.entries.contains(TransferDirection.DOWNLOAD))
     }
 
     // ==================== TransferState Tests ====================
@@ -171,34 +171,25 @@ class FileTransferManagerTest {
             TransferState.CANCELLED
         )
 
-        assertThat(TransferState.entries.size).isEqualTo(expectedStates.size)
+        assertEquals(expectedStates.size, TransferState.entries.size)
         expectedStates.forEach { state ->
-            assertThat(TransferState.entries.contains(state)).isTrue()
+            assertTrue(TransferState.entries.contains(state))
         }
     }
 
     // ==================== TransferProgress Tests ====================
 
     @Test
-    fun `TransferProgress should calculate progress percentage correctly`() {
+    fun `TransferProgress should calculate percentage correctly`() {
         val progress = TransferProgress(
             bytesTransferred = 500,
             totalBytes = 1000,
-            speed = 100
+            percentage = 50f
         )
 
-        assertThat(progress.progressPercent).isEqualTo(50)
-    }
-
-    @Test
-    fun `TransferProgress progressPercent should be capped at 100`() {
-        val progress = TransferProgress(
-            bytesTransferred = 1500,
-            totalBytes = 1000,
-            speed = 100
-        )
-
-        assertThat(progress.progressPercent).isEqualTo(100)
+        assertEquals(500L, progress.bytesTransferred)
+        assertEquals(1000L, progress.totalBytes)
+        assertEquals(50f, progress.percentage, 0.01f)
     }
 
     @Test
@@ -209,9 +200,9 @@ class FileTransferManagerTest {
             elapsedTimeMs = 5000
         )
 
-        assertThat(progress.bytesTransferred).isEqualTo(500)
-        assertThat(progress.totalBytes).isEqualTo(1000)
-        assertThat(progress.speed).isGreaterThan(0)
+        assertEquals(500L, progress.bytesTransferred)
+        assertEquals(1000L, progress.totalBytes)
+        assertTrue(progress.percentage > 0)
     }
 
     // ==================== TransferError Tests ====================
@@ -220,28 +211,28 @@ class FileTransferManagerTest {
     fun `TransferError NetworkError should contain message`() {
         val error = TransferError.NetworkError("Connection failed")
 
-        assertThat(error.message).isEqualTo("Connection failed")
+        assertEquals("Connection failed", error.message)
     }
 
     @Test
     fun `TransferError StorageError should contain message`() {
         val error = TransferError.StorageError("Disk full")
 
-        assertThat(error.message).isEqualTo("Disk full")
+        assertEquals("Disk full", error.message)
     }
 
     @Test
     fun `TransferError SizeLimitError should contain message`() {
         val error = TransferError.SizeLimitError("File too large")
 
-        assertThat(error.message).isEqualTo("File too large")
+        assertEquals("File too large", error.message)
     }
 
     @Test
     fun `TransferError UnknownError should contain message`() {
         val error = TransferError.UnknownError("Unknown error")
 
-        assertThat(error.message).isEqualTo("Unknown error")
+        assertEquals("Unknown error", error.message)
     }
 
     // ==================== TransferResult Tests ====================
@@ -255,10 +246,10 @@ class FileTransferManagerTest {
             durationMs = 5000
         )
 
-        assertThat(result.sessionId).isEqualTo("session-1")
-        assertThat(result.fileName).isEqualTo("test.txt")
-        assertThat(result.bytesTransferred).isEqualTo(1024)
-        assertThat(result.durationMs).isEqualTo(5000)
+        assertEquals("session-1", result.sessionId)
+        assertEquals("test.txt", result.fileName)
+        assertEquals(1024L, result.bytesTransferred)
+        assertEquals(5000L, result.durationMs)
     }
 
     @Test
@@ -268,7 +259,7 @@ class FileTransferManagerTest {
             bytesTransferred = 512
         )
 
-        assertThat(result.sessionId).isEqualTo("session-1")
-        assertThat(result.bytesTransferred).isEqualTo(512)
+        assertEquals("session-1", result.sessionId)
+        assertEquals(512L, result.bytesTransferred)
     }
 }

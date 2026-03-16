@@ -6,7 +6,7 @@ import androidx.test.filters.SdkSuppress
 import com.dfa.core.vm.VmConfig
 import com.dfa.core.vm.VmHandle
 import com.dfa.core.vm.VmState
-import com.google.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest

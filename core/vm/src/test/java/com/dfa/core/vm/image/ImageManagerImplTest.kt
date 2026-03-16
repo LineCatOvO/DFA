@@ -1,6 +1,6 @@
 package com.dfa.core.vm.image
 
-import com.google.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

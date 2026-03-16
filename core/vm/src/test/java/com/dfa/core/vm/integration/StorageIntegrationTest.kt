@@ -2,7 +2,7 @@ package com.dfa.core.vm.integration
 
 import com.dfa.core.vm.storage.models.StorageConfig
 import com.dfa.core.vm.storage.models.StorageType
-import com.google.truth.Truth.assertThat
+import org.junit.Assert.*
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import java.io.File
@@ -23,7 +23,7 @@ class StorageIntegrationTest {
             maxStorageBytes = 1024L * 1024 * 1024 * 10 // 10GB
         )
 
-        assertThat(config.validate()).isTrue()
+        assertTrue(config.validate())
     }
 
     @Test
@@ -33,7 +33,7 @@ class StorageIntegrationTest {
             maxStorageBytes = 0 // Invalid: zero size
         )
 
-        assertThat(config.validate()).isFalse()
+        assertFalse(config.validate())
     }
 
     // ==================== Storage Type Tests ====================
@@ -44,12 +44,12 @@ class StorageIntegrationTest {
             StorageType.INTERNAL,
             StorageType.EXTERNAL,
             StorageType.ENCRYPTED,
-            StorageType.NETWORK
+            StorageType.SAF
         )
 
-        assertThat(StorageType.entries.size).isEqualTo(expectedTypes.size)
+        assertEquals(expectedTypes.size, StorageType.entries.size)
         expectedTypes.forEach { type ->
-            assertThat(StorageType.entries.contains(type)).isTrue()
+            assertTrue(StorageType.entries.contains(type))
         }
     }
 
@@ -62,7 +62,7 @@ class StorageIntegrationTest {
 
         val created = dir.mkdirs()
 
-        assertThat(created || dir.exists()).isTrue()
+        assertTrue(created || dir.exists())
 
         // Cleanup
         dir.deleteRecursively()
@@ -75,10 +75,10 @@ class StorageIntegrationTest {
         dir.mkdirs()
 
         val testFile = File(dir, "test.txt")
-        val written = testFile.writeText("test content")
+        testFile.writeText("test content")
 
-        assertThat(testFile.exists()).isTrue()
-        assertThat(testFile.readText()).isEqualTo("test content")
+        assertTrue(testFile.exists())
+        assertEquals("test content", testFile.readText())
 
         // Cleanup
         dir.deleteRecursively()
@@ -100,7 +100,7 @@ class StorageIntegrationTest {
             .filter { it.isFile }
             .sumOf { it.length() }
 
-        assertThat(totalSize).isGreaterThan(0)
+        assertTrue(totalSize > 0)
 
         // Cleanup
         dir.deleteRecursively()
@@ -116,8 +116,8 @@ class StorageIntegrationTest {
             enableEncryption = false
         )
 
-        assertThat(configWithoutEncryption.enableEncryption).isFalse()
-        assertThat(configWithoutEncryption.encryptionKeyAlias).isNull()
+        assertFalse(configWithoutEncryption.enableEncryption)
+        assertNull(configWithoutEncryption.encryptionKeyAlias)
     }
 
     @Test
@@ -129,8 +129,8 @@ class StorageIntegrationTest {
             encryptionKeyAlias = "test_key"
         )
 
-        assertThat(configWithEncryption.enableEncryption).isTrue()
-        assertThat(configWithEncryption.encryptionKeyAlias).isEqualTo("test_key")
+        assertTrue(configWithEncryption.enableEncryption)
+        assertEquals("test_key", configWithEncryption.encryptionKeyAlias)
     }
 
     // ==================== Quota Tests ====================
@@ -142,7 +142,7 @@ class StorageIntegrationTest {
             maxStorageBytes = 1024L * 1024 * 1024 * 5 // 5GB
         )
 
-        assertThat(config.maxStorageBytes).isEqualTo(1024L * 1024 * 1024 * 5)
+        assertEquals(1024L * 1024 * 1024 * 5, config.maxStorageBytes)
     }
 
     // ==================== Cleanup Tests ====================
@@ -160,15 +160,15 @@ class StorageIntegrationTest {
 
         // Count temp files
         val tempFiles = dir.listFiles()?.filter { it.extension == "tmp" } ?: emptyList()
-        assertThat(tempFiles).hasSize(2)
+        assertEquals(2, tempFiles.size)
 
         // Delete temp files
         tempFiles.forEach { it.delete() }
 
         // Verify only non-temp files remain
         val remainingFiles = dir.listFiles()?.toList() ?: emptyList()
-        assertThat(remainingFiles).hasSize(1)
-        assertThat(remainingFiles[0].name).isEqualTo("data.txt")
+        assertEquals(1, remainingFiles.size)
+        assertEquals("data.txt", remainingFiles[0].name)
 
         // Cleanup
         dir.deleteRecursively()

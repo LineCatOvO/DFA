@@ -30,8 +30,8 @@ class VmModelsTest {
     }
     
     @Test
-    fun `VmResources validate should return true for valid resources`() {
-        val resources = VmResources(
+    fun `VmResourceConfig validate should return true for valid resources`() {
+        val resources = VmResourceConfig(
             memoryMb = 2048,
             cpuCores = 2,
             diskSizeGb = 10,
@@ -42,8 +42,8 @@ class VmModelsTest {
     }
     
     @Test
-    fun `VmResources validate should return false for invalid memory`() {
-        val resources = VmResources(
+    fun `VmResourceConfig validate should return false for invalid memory`() {
+        val resources = VmResourceConfig(
             memoryMb = 0,
             cpuCores = 2,
             diskSizeGb = 10,
@@ -54,8 +54,8 @@ class VmModelsTest {
     }
     
     @Test
-    fun `VmResources validate should return false for invalid cpu`() {
-        val resources = VmResources(
+    fun `VmResourceConfig validate should return false for invalid cpu`() {
+        val resources = VmResourceConfig(
             memoryMb = 2048,
             cpuCores = 0,
             diskSizeGb = 10,
@@ -66,8 +66,8 @@ class VmModelsTest {
     }
     
     @Test
-    fun `VmResources validate should return false for gpu enabled but no gpu memory`() {
-        val resources = VmResources(
+    fun `VmResourceConfig validate should return false for gpu enabled but no gpu memory`() {
+        val resources = VmResourceConfig(
             memoryMb = 2048,
             cpuCores = 2,
             diskSizeGb = 10,
@@ -80,8 +80,8 @@ class VmModelsTest {
     }
     
     @Test
-    fun `VmResources validate should return true for gpu enabled with gpu memory`() {
-        val resources = VmResources(
+    fun `VmResourceConfig validate should return true for gpu enabled with gpu memory`() {
+        val resources = VmResourceConfig(
             memoryMb = 2048,
             cpuCores = 2,
             diskSizeGb = 10,

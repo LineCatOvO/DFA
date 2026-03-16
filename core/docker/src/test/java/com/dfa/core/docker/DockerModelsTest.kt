@@ -1,6 +1,6 @@
 package com.dfa.core.docker
 
-import com.google.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 /**
@@ -88,10 +88,10 @@ class DockerModelsTest {
             status = "Up 2 hours"
         )
 
-        val copied = original.copy(state = ContainerState.STOPPED, status = "Exited (0) 1 minute ago")
+        val copied = original.copy(state = ContainerState.EXITED, status = "Exited (0) 1 minute ago")
 
         assertThat(copied.id).isEqualTo("container-123")
-        assertThat(copied.state).isEqualTo(ContainerState.STOPPED)
+        assertThat(copied.state).isEqualTo(ContainerState.EXITED)
         assertThat(original.state).isEqualTo(ContainerState.RUNNING)
     }
 
