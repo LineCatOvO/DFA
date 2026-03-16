@@ -115,6 +115,117 @@ object TermuxConstants {
      */
     const val TERMUX_ZSH = "/data/data/com.termux/files/usr/bin/zsh"
 
+    // ==================== QEMU包名常量 ====================
+
+    /**
+     * QEMU系统模拟器包名（x86_64）
+     */
+    const val QEMU_SYSTEM_X86_64_PACKAGE = "qemu-system-x86-64"
+
+    /**
+     * QEMU系统模拟器包名（i386）
+     */
+    const val QEMU_SYSTEM_I386_PACKAGE = "qemu-system-i386"
+
+    /**
+     * QEMU系统模拟器包名（ARM）
+     */
+    const val QEMU_SYSTEM_ARM_PACKAGE = "qemu-system-arm"
+
+    /**
+     * QEMU系统模拟器包名（AARCH64）
+     */
+    const val QEMU_SYSTEM_AARCH64_PACKAGE = "qemu-system-aarch64"
+
+    /**
+     * QEMU镜像工具包名
+     */
+    const val QEMU_IMG_PACKAGE = "qemu-img"
+
+    /**
+     * QEMU通用包名前缀
+     */
+    const val QEMU_PACKAGE_PREFIX = "qemu-"
+
+    // ==================== QEMU命令常量 ====================
+
+    /**
+     * QEMU系统模拟器命令（x86_64）
+     */
+    const val QEMU_SYSTEM_X86_64_COMMAND = "qemu-system-x86_64"
+
+    /**
+     * QEMU系统模拟器命令（i386）
+     */
+    const val QEMU_SYSTEM_I386_COMMAND = "qemu-system-i386"
+
+    /**
+     * QEMU系统模拟器命令（ARM）
+     */
+    const val QEMU_SYSTEM_ARM_COMMAND = "qemu-system-arm"
+
+    /**
+     * QEMU系统模拟器命令（AARCH64）
+     */
+    const val QEMU_SYSTEM_AARCH64_COMMAND = "qemu-system-aarch64"
+
+    /**
+     * QEMU镜像工具命令
+     */
+    const val QEMU_IMG_COMMAND = "qemu-img"
+
+    /**
+     * QEMU网络工具命令
+     */
+    const val QEMU_NBD_COMMAND = "qemu-nbd"
+
+    // ==================== SSH相关常量 ====================
+
+    /**
+     * OpenSSH包名
+     */
+    const val OPENSSH_PACKAGE = "openssh"
+
+    /**
+     * SSH守护进程命令
+     */
+    const val SSHD_COMMAND = "sshd"
+
+    /**
+     * SSH客户端命令
+     */
+    const val SSH_COMMAND = "ssh"
+
+    /**
+     * SCP命令
+     */
+    const val SCP_COMMAND = "scp"
+
+    /**
+     * SSH密钥生成命令
+     */
+    const val SSH_KEYGEN_COMMAND = "ssh-keygen"
+
+    /**
+     * SSH默认端口
+     */
+    const val SSH_DEFAULT_PORT = 8022
+
+    /**
+     * SSH配置文件路径
+     */
+    const val SSH_CONFIG_PATH = "/data/data/com.termux/files/usr/etc/ssh/sshd_config"
+
+    /**
+     * SSH主机密钥目录
+     */
+    const val SSH_HOST_KEYS_DIR = "/data/data/com.termux/files/usr/etc/ssh"
+
+    /**
+     * SSH用户密钥目录
+     */
+    const val SSH_USER_KEYS_DIR = "/data/data/com.termux/files/home/.ssh"
+
     // ==================== 环境变量常量 ====================
 
     /**
@@ -173,6 +284,21 @@ object TermuxConstants {
      * 文件操作超时时间（毫秒）
      */
     const val FILE_OPERATION_TIMEOUT_MS = 60_000L
+
+    /**
+     * 环境检测超时时间（毫秒）
+     */
+    const val ENVIRONMENT_CHECK_TIMEOUT_MS = 10_000L
+
+    /**
+     * QEMU命令验证超时时间（毫秒）
+     */
+    const val QEMU_VALIDATION_TIMEOUT_MS = 30_000L
+
+    /**
+     * SSH服务检测超时时间（毫秒）
+     */
+    const val SSH_CHECK_TIMEOUT_MS = 5_000L
 
     // ==================== 其他常量 ====================
 

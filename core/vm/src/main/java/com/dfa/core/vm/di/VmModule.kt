@@ -53,6 +53,8 @@ import com.dfa.core.vm.storage.image.Qcow2Handler
 import com.dfa.core.vm.storage.image.RawImageHandler
 import com.dfa.core.vm.termux.TermuxBridge
 import com.dfa.core.vm.termux.TermuxBridgeImpl
+import com.dfa.core.vm.termux.TermuxEnvironmentChecker
+import com.dfa.core.vm.termux.TermuxEnvironmentCheckerImpl
 import com.dfa.core.vm.termux.TermuxPackageManager
 import com.dfa.core.vm.termux.TermuxPackageManagerImpl
 import dagger.Binds
@@ -134,6 +136,13 @@ abstract class VmModule {
     @Binds
     @Singleton
     abstract fun bindTermuxPackageManager(impl: TermuxPackageManagerImpl): TermuxPackageManager
+
+    /**
+     * 绑定TermuxEnvironmentChecker接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindTermuxEnvironmentChecker(impl: TermuxEnvironmentCheckerImpl): TermuxEnvironmentChecker
 
     /**
      * 绑定ImageDownloader接口到实现
@@ -443,6 +452,21 @@ abstract class VmModule {
             termuxBridge: TermuxBridge
         ): TermuxPackageManagerImpl {
             return TermuxPackageManagerImpl(termuxBridge)
+        }
+
+        /**
+         * 提供TermuxEnvironmentCheckerImpl实例
+         */
+        @Provides
+        @Singleton
+        fun provideTermuxEnvironmentCheckerImpl(
+            @ApplicationContext context: Context,
+            termuxBridge: TermuxBridge
+        ): TermuxEnvironmentCheckerImpl {
+            return TermuxEnvironmentCheckerImpl(
+                context = context,
+                termuxBridge = termuxBridge
+            )
         }
 
         /**
