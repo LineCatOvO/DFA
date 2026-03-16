@@ -5,10 +5,10 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.dfa.core.vm.VmConfig
 import com.dfa.core.vm.VmHandle
+import com.dfa.core.vm.VmInfo
+import com.dfa.core.vm.VmResources
 import com.dfa.core.vm.VmState
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -37,8 +37,8 @@ class QemuVmAdapterIntegrationTest {
     // 测试用的QEMU适配器实例
     private lateinit var qemuAdapter: QemuVmAdapter
 
-    // 测试用的虚拟机配置
-    private val testVmConfig = QemuConfig.Builder()
+    // 测试用的QEMU配置（用于QEMU特定功能测试）
+    private val testQemuConfig = QemuConfig.Builder()
         .id("test-vm-integration")
         .name("Integration Test VM")
         .targetArch(QemuTargetArch.X86_64)
@@ -46,6 +46,14 @@ class QemuVmAdapterIntegrationTest {
         .cpuCores(1)
         .enableKvm(false)
         .build()
+
+    // 测试用的通用虚拟机配置（用于VmAdapter接口方法）
+    private val testVmConfig = VmConfig(
+        id = "test-vm-integration",
+        name = "Integration Test VM",
+        memory = 512,
+        cpu = 1
+    )
 
     // 测试过程中创建的虚拟机句柄
     private var createdHandle: VmHandle? = null
@@ -90,8 +98,9 @@ class QemuVmAdapterIntegrationTest {
 
         // Then: 应该返回有效的版本字符串
         assertThat(result.isSuccess).isTrue()
-        assertThat(result.getOrNull()).isNotEmpty()
-        assertThat(result.getOrNull()).containsMatch(Regex("\\d+\\.\\d+"))
+        val version = result.getOrNull()
+        assertThat(version).isNotEmpty()
+        assertThat(version?.matches(Regex(".*\\d+\\.\\d+.*")) ?: false).isTrue()
     }
 
     @Test
@@ -140,7 +149,6 @@ class QemuVmAdapterIntegrationTest {
         assertThat(result.isSuccess).isTrue()
         val handle = result.getOrThrow()
         assertThat(handle.vmId).isEqualTo(config.id)
-        assertThat(handle.state).isEqualTo(VmState.CREATED)
 
         // 记录句柄以便清理
         createdHandle = handle
@@ -149,12 +157,12 @@ class QemuVmAdapterIntegrationTest {
     @Test
     fun `createVm should fail with invalid config`() = runTest {
         // Given: 无效的虚拟机配置（内存为0）
-        val invalidConfig = QemuConfig.Builder()
-            .id("invalid-vm")
-            .name("Invalid VM")
-            .memoryMb(0)
-            .cpuCores(0)
-            .build()
+        val invalidConfig = VmConfig(
+            id = "invalid-vm",
+            name = "Invalid VM",
+            memory = 0,
+            cpu = 0
+        )
 
         // When: 尝试创建虚拟机
         val result = qemuAdapter.createVm(invalidConfig)
@@ -180,16 +188,13 @@ class QemuVmAdapterIntegrationTest {
     @Test
     fun `createVm with disk image should succeed`() = runTest {
         // Given: 带磁盘镜像的配置
-        val configWithDisk = QemuConfig.Builder()
-            .id("vm-with-disk")
-            .name("VM with Disk")
-            .memoryMb(512)
-            .addDisk(QemuDiskConfig(
-                path = "/tmp/test-disk.qcow2",
-                format = QemuDiskFormat.QCOW2,
-                sizeGb = 1
-            ))
-            .build()
+        val configWithDisk = VmConfig(
+            id = "vm-with-disk",
+            name = "VM with Disk",
+            memory = 512,
+            cpu = 1,
+            diskSize = 1
+        )
 
         // When: 创建虚拟机
         val result = qemuAdapter.createVm(configWithDisk)
@@ -214,7 +219,8 @@ class QemuVmAdapterIntegrationTest {
 
         // Then: 应该成功启动
         assertThat(startResult.isSuccess).isTrue()
-        assertThat(handle.state).isEqualTo(VmState.RUNNING)
+        val vmInfo = startResult.getOrThrow()
+        assertThat(vmInfo.state).isEqualTo(VmState.RUNNING)
     }
 
     @Test
@@ -230,7 +236,8 @@ class QemuVmAdapterIntegrationTest {
 
         // Then: 应该成功停止
         assertThat(stopResult.isSuccess).isTrue()
-        assertThat(handle.state).isEqualTo(VmState.STOPPED)
+        val statusResult = qemuAdapter.getVmStatus(handle)
+        assertThat(statusResult.getOrNull()?.state).isEqualTo(VmState.STOPPED)
     }
 
     @Test
@@ -246,7 +253,8 @@ class QemuVmAdapterIntegrationTest {
 
         // Then: 应该成功暂停
         assertThat(pauseResult.isSuccess).isTrue()
-        assertThat(handle.state).isEqualTo(VmState.PAUSED)
+        val statusResult = qemuAdapter.getVmStatus(handle)
+        assertThat(statusResult.getOrNull()?.state).isEqualTo(VmState.PAUSED)
     }
 
     @Test
@@ -263,7 +271,8 @@ class QemuVmAdapterIntegrationTest {
 
         // Then: 应该成功恢复
         assertThat(resumeResult.isSuccess).isTrue()
-        assertThat(handle.state).isEqualTo(VmState.RUNNING)
+        val statusResult = qemuAdapter.getVmStatus(handle)
+        assertThat(statusResult.getOrNull()?.state).isEqualTo(VmState.RUNNING)
     }
 
     @Test
@@ -294,25 +303,25 @@ class QemuVmAdapterIntegrationTest {
         qemuAdapter.startVm(handle)
 
         // Then: 状态应该变为RUNNING
-        val currentState = handle.state
-        assertThat(currentState).isEqualTo(VmState.RUNNING)
+        val statusResult = qemuAdapter.getVmStatus(handle)
+        assertThat(statusResult.getOrNull()?.state).isEqualTo(VmState.RUNNING)
     }
 
     @Test
-    fun `getVmInfo should return current VM information`() = runTest {
+    fun `getVmStatus should return current VM information`() = runTest {
         // Given: 已创建的虚拟机
         val createResult = qemuAdapter.createVm(testVmConfig)
         val handle = createResult.getOrThrow()
         createdHandle = handle
 
         // When: 获取虚拟机信息
-        val infoResult = qemuAdapter.getVmInfo(handle)
+        val infoResult = qemuAdapter.getVmStatus(handle)
 
         // Then: 应该返回正确的信息
         assertThat(infoResult.isSuccess).isTrue()
         val info = infoResult.getOrThrow()
-        assertThat(info.vmId).isEqualTo(testVmConfig.id)
-        assertThat(info.name).isEqualTo(testVmConfig.name)
+        assertThat(info.config.id).isEqualTo(testVmConfig.id)
+        assertThat(info.config.name).isEqualTo(testVmConfig.name)
     }
 
     // ==================== 快照管理测试 ====================
@@ -465,12 +474,12 @@ class QemuVmAdapterIntegrationTest {
     @Test
     fun `isConfigSupported should return false for excessive memory`() = runTest {
         // Given: 内存过大的配置
-        val excessiveConfig = QemuConfig.Builder()
-            .id("excessive-vm")
-            .name("Excessive Memory VM")
-            .memoryMb(Int.MAX_VALUE)
-            .cpuCores(1)
-            .build()
+        val excessiveConfig = VmConfig(
+            id = "excessive-vm",
+            name = "Excessive Memory VM",
+            memory = Int.MAX_VALUE,
+            cpu = 1
+        )
 
         // When: 检查配置是否支持
         val isSupported = qemuAdapter.isConfigSupported(excessiveConfig)

@@ -3,7 +3,6 @@ package com.dfa.core.vm.channel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import com.dfa.core.vm.communication.ChannelConfig
 import com.dfa.core.vm.communication.ChannelType
 import com.dfa.core.vm.communication.CommunicationState
 import com.google.common.truth.Truth.assertThat
@@ -74,12 +73,10 @@ class SshChannelIntegrationTest {
     @Test
     fun `connect should establish SSH connection`() = runTest {
         // Given: 有效的SSH配置
-        val config = ChannelConfig(
-            type = ChannelType.SSH,
+        val config = SshChannelConfig(
             host = testHost,
             port = testPort,
-            username = testUsername,
-            password = testPassword
+            authMethod = SshAuthMethod.Password(testUsername, testPassword)
         )
 
         // When: 连接SSH
@@ -93,12 +90,10 @@ class SshChannelIntegrationTest {
     @Test
     fun `connect should update state to CONNECTED`() = runTest {
         // Given: 有效的SSH配置
-        val config = ChannelConfig(
-            type = ChannelType.SSH,
+        val config = SshChannelConfig(
             host = testHost,
             port = testPort,
-            username = testUsername,
-            password = testPassword
+            authMethod = SshAuthMethod.Password(testUsername, testPassword)
         )
 
         // When: 连接SSH
@@ -112,12 +107,10 @@ class SshChannelIntegrationTest {
     @Test
     fun `connect should fail with invalid credentials`() = runTest {
         // Given: 无效的凭据
-        val config = ChannelConfig(
-            type = ChannelType.SSH,
+        val config = SshChannelConfig(
             host = testHost,
             port = testPort,
-            username = "invalid_user",
-            password = "invalid_password"
+            authMethod = SshAuthMethod.Password("invalid_user", "invalid_password")
         )
 
         // When: 尝试连接
@@ -130,13 +123,11 @@ class SshChannelIntegrationTest {
     @Test
     fun `connect should fail with unreachable host`() = runTest {
         // Given: 不可达的主机
-        val config = ChannelConfig(
-            type = ChannelType.SSH,
+        val config = SshChannelConfig(
             host = "192.168.255.255", // 不可达地址
             port = testPort,
-            username = testUsername,
-            password = testPassword,
-            connectionTimeoutMs = 5000
+            authMethod = SshAuthMethod.Password(testUsername, testPassword),
+            timeoutConfig = SshTimeoutConfig(connectionTimeoutMs = 5000)
         )
 
         // When: 尝试连接
@@ -673,12 +664,10 @@ class SshChannelIntegrationTest {
         sshChannel.disconnect()
 
         // When: 重新连接
-        val config = ChannelConfig(
-            type = ChannelType.SSH,
+        val config = SshChannelConfig(
             host = testHost,
             port = testPort,
-            username = testUsername,
-            password = testPassword
+            authMethod = SshAuthMethod.Password(testUsername, testPassword)
         )
         val result = sshChannel.connect(config)
 
@@ -711,12 +700,10 @@ class SshChannelIntegrationTest {
      * 建立SSH连接
      */
     private suspend fun establishConnection() {
-        val config = ChannelConfig(
-            type = ChannelType.SSH,
+        val config = SshChannelConfig(
             host = testHost,
             port = testPort,
-            username = testUsername,
-            password = testPassword
+            authMethod = SshAuthMethod.Password(testUsername, testPassword)
         )
         sshChannel.connect(config)
     }

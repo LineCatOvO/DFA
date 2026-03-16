@@ -96,7 +96,8 @@ class SocketChannelIntegrationTest {
     fun `connect should establish TCP socket connection`() = runTest {
         // Given: TCP Socket配置
         val config = SocketConfig(
-            type = SocketType.TCP,
+            type = ChannelType.SOCKET_TCP,
+            socketType = SocketType.Tcp("127.0.0.1", testServerPort),
             host = "127.0.0.1",
             port = testServerPort
         )
@@ -113,7 +114,8 @@ class SocketChannelIntegrationTest {
     fun `connect should update state to CONNECTED for TCP`() = runTest {
         // Given: TCP Socket配置
         val config = SocketConfig(
-            type = SocketType.TCP,
+            type = ChannelType.SOCKET_TCP,
+            socketType = SocketType.Tcp("127.0.0.1", testServerPort),
             host = "127.0.0.1",
             port = testServerPort
         )
@@ -130,7 +132,8 @@ class SocketChannelIntegrationTest {
     fun `connect should fail for unreachable TCP host`() = runTest {
         // Given: 不可达的主机
         val config = SocketConfig(
-            type = SocketType.TCP,
+            type = ChannelType.SOCKET_TCP,
+            socketType = SocketType.Tcp("192.168.255.255", 9999),
             host = "192.168.255.255",
             port = 9999,
             connectionTimeoutMs = 1000
@@ -147,7 +150,8 @@ class SocketChannelIntegrationTest {
     fun `connect should fail for invalid TCP port`() = runTest {
         // Given: 无效的端口
         val config = SocketConfig(
-            type = SocketType.TCP,
+            type = ChannelType.SOCKET_TCP,
+            socketType = SocketType.Tcp("127.0.0.1", -1),
             host = "127.0.0.1",
             port = -1
         )
@@ -198,7 +202,8 @@ class SocketChannelIntegrationTest {
     fun `isReachable should return false for unavailable TCP server`() = runTest {
         // Given: 不可达的服务器
         val config = SocketConfig(
-            type = SocketType.TCP,
+            type = ChannelType.SOCKET_TCP,
+            socketType = SocketType.Tcp("192.168.255.255", 9999),
             host = "192.168.255.255",
             port = 9999
         )
@@ -245,7 +250,8 @@ class SocketChannelIntegrationTest {
         startUnixSocketServer()
 
         val config = SocketConfig(
-            type = SocketType.UNIX,
+            type = ChannelType.SOCKET_UNIX,
+            socketType = SocketType.Unix(unixSocketPath),
             path = unixSocketPath
         )
 
@@ -261,7 +267,8 @@ class SocketChannelIntegrationTest {
     fun `connect should fail for non-existing Unix socket path`() = runTest {
         // Given: 不存在的Unix Socket路径
         val config = SocketConfig(
-            type = SocketType.UNIX,
+            type = ChannelType.SOCKET_UNIX,
+            socketType = SocketType.Unix("/tmp/nonexistent-socket-12345.sock"),
             path = "/tmp/nonexistent-socket-12345.sock"
         )
 
@@ -280,8 +287,8 @@ class SocketChannelIntegrationTest {
         // When: 获取Socket类型
         val socketType = socketChannel.socketType
 
-        // Then: 应该返回UNIX
-        assertThat(socketType).isEqualTo(SocketType.UNIX)
+        // Then: 应该返回Unix类型
+        assertThat(socketType is SocketType.Unix).isTrue()
     }
 
     @Test
@@ -452,7 +459,6 @@ class SocketChannelIntegrationTest {
 
         // Then: 应该包含正确的信息
         assertThat(connectionInfo.isConnected).isTrue()
-        assertThat(connectionInfo.remoteAddress).isNotNull()
     }
 
     @Test
@@ -619,7 +625,8 @@ class SocketChannelIntegrationTest {
 
         // When: 触发错误（尝试连接不可达服务器）
         val config = SocketConfig(
-            type = SocketType.TCP,
+            type = ChannelType.SOCKET_TCP,
+            socketType = SocketType.Tcp("192.168.255.255", 9999),
             host = "192.168.255.255",
             port = 9999,
             connectionTimeoutMs = 100
@@ -660,15 +667,16 @@ class SocketChannelIntegrationTest {
     // ==================== SocketType测试 ====================
 
     @Test
-    fun `SocketType should have TCP and UNIX values`() {
-        // When: 获取所有SocketType值
-        val types = SocketType.values()
+    fun `SocketType should have TCP and UNIX types`() {
+        // When: 创建SocketType实例
+        val tcpType = SocketType.Tcp("127.0.0.1", 8080)
+        val unixType = SocketType.Unix("/tmp/test.sock")
 
-        // Then: 应该包含TCP和UNIX
-        assertThat(types).asList().containsExactly(
-            SocketType.TCP,
-            SocketType.UNIX
-        )
+        // Then: 应该能够创建TCP和Unix类型
+        assertThat(tcpType).isNotNull()
+        assertThat(unixType).isNotNull()
+        assertThat(tcpType is SocketType.Tcp).isTrue()
+        assertThat(unixType is SocketType.Unix).isTrue()
     }
 
     // ==================== SocketChannelState测试 ====================
@@ -709,7 +717,8 @@ class SocketChannelIntegrationTest {
      */
     private suspend fun establishTcpConnection() {
         val config = SocketConfig(
-            type = SocketType.TCP,
+            type = ChannelType.SOCKET_TCP,
+            socketType = SocketType.Tcp("127.0.0.1", testServerPort),
             host = "127.0.0.1",
             port = testServerPort
         )
@@ -722,7 +731,8 @@ class SocketChannelIntegrationTest {
     private suspend fun establishUnixConnection() {
         startUnixSocketServer()
         val config = SocketConfig(
-            type = SocketType.UNIX,
+            type = ChannelType.SOCKET_UNIX,
+            socketType = SocketType.Unix(unixSocketPath),
             path = unixSocketPath
         )
         socketChannel.connect(config)

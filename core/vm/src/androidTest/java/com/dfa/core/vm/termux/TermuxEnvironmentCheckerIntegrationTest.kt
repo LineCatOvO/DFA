@@ -3,18 +3,14 @@ package com.dfa.core.vm.termux
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import dagger.hilt.android.testing.HiltAndroidRule
-import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import javax.inject.Inject
 
 /**
  * TermuxEnvironmentChecker集成测试
@@ -23,22 +19,19 @@ import javax.inject.Inject
  *
  * 注意：这些测试需要在真实的Android设备或模拟器上运行，且需要Termux环境
  */
-@HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
 class TermuxEnvironmentCheckerIntegrationTest {
 
-    @get:Rule
-    var hiltRule = HiltAndroidRule(this)
-
-    @Inject
-    lateinit var environmentChecker: TermuxEnvironmentChecker
-
+    private lateinit var environmentChecker: TermuxEnvironmentChecker
     private lateinit var context: Context
+    private lateinit var termuxBridge: TermuxBridge
 
     @Before
     fun setup() {
-        hiltRule.inject()
         context = InstrumentationRegistry.getInstrumentation().targetContext
+        // 手动创建实例，不使用Hilt注入
+        termuxBridge = TermuxBridgeImpl(TermuxConfig.DEFAULT)
+        environmentChecker = TermuxEnvironmentCheckerImpl(context, termuxBridge)
     }
 
     // ==================== Termux应用安装检测测试 ====================
