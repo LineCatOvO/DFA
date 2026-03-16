@@ -275,9 +275,18 @@ data class QemuProcessHandle(
 
     /**
      * 获取进程PID
+     * 注意：在Android上，Process.pid()方法可能不可用
+     * 使用反射获取PID作为备选方案
      */
     val pid: Long
-        get() = process.pid()
+        get() = try {
+            // 尝试使用Java 9+的pid()方法
+            val method = Process::class.java.getMethod("pid")
+            method.invoke(process) as Long
+        } catch (e: Exception) {
+            // 如果方法不可用，返回-1表示未知
+            -1L
+        }
 
     /**
      * 获取退出码

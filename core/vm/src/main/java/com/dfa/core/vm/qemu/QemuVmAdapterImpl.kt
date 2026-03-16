@@ -944,7 +944,7 @@ class QemuVmAdapterImpl(
     /**
      * 转换VmConfig到QemuConfig
      */
-    private fun convertToQemuConfig(config: VmConfig): QemuConfig {
+    private suspend fun convertToQemuConfig(config: VmConfig): QemuConfig {
         return QemuConfig.Builder()
             .id(config.id)
             .name(config.name)

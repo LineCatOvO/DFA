@@ -3,7 +3,6 @@ package com.dfa.core.vm.qemu
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.*
 import java.net.InetSocketAddress
@@ -44,7 +43,9 @@ class QemuMonitorImpl(
     }
 
     // 连接状态
-    private val isConnected = AtomicBoolean(false)
+    private val _connected = AtomicBoolean(false)
+    override val isConnected: Boolean
+        get() = _connected.get()
 
     // Socket连接
     private var socket: Socket? = null
@@ -79,10 +80,10 @@ class QemuMonitorImpl(
     // ==================== 连接管理 ====================
 
     override val isConnected: Boolean
-        get() = isConnected.get() && socket?.isConnected == true && socket?.isClosed == false
+        get() = _connected.get() && socket?.isConnected == true && socket?.isClosed == false
 
     override suspend fun connect(): Result<Unit> {
-        if (isConnected.get()) {
+        if (_connected.get()) {
             return Result.success(Unit)
         }
 
@@ -111,7 +112,7 @@ class QemuMonitorImpl(
                     return@withContext capabilitiesResult
                 }
 
-                isConnected.set(true)
+                _connected.set(true)
 
                 // 启动事件读取任务
                 startEventReader()
@@ -204,7 +205,7 @@ class QemuMonitorImpl(
     }
 
     override suspend fun disconnect(): Result<Unit> {
-        if (!isConnected.getAndSet(false)) {
+        if (!_connected.getAndSet(false)) {
             return Result.success(Unit)
         }
 
@@ -247,7 +248,7 @@ class QemuMonitorImpl(
                 // 正常取消
             } catch (e: Exception) {
                 // 连接断开
-                isConnected.set(false)
+                _connected.set(false)
             }
         }
     }
@@ -323,7 +324,7 @@ class QemuMonitorImpl(
         command: String,
         arguments: Map<String, Any>
     ): Result<String> {
-        if (!isConnected.get()) {
+        if (!_connected.get()) {
             return Result.failure(IOException("Not connected to QEMU monitor"))
         }
 
@@ -948,16 +949,16 @@ class QemuMonitorImpl(
 /**
  * QMP问候消息
  */
-@Serializable
+@kotlinx.serialization.Serializable
 data class QmpGreeting(
-    @SerialName("QMP")
+    @kotlinx.serialization.SerialName("QMP")
     val qmp: QmpVersion? = null
 )
 
 /**
  * QMP版本信息
  */
-@Serializable
+@kotlinx.serialization.Serializable
 data class QmpVersion(
     val version: QmpVersionInfo? = null,
     val capabilities: List<String>? = null
@@ -966,7 +967,7 @@ data class QmpVersion(
 /**
  * QMP版本详情
  */
-@Serializable
+@kotlinx.serialization.Serializable
 data class QmpVersionInfo(
     val qemu: QemuVersionInfo? = null
 )
@@ -974,7 +975,7 @@ data class QmpVersionInfo(
 /**
  * QEMU版本信息
  */
-@Serializable
+@kotlinx.serialization.Serializable
 data class QemuVersionInfo(
     val major: Int? = null,
     val minor: Int? = null,
@@ -985,7 +986,7 @@ data class QemuVersionInfo(
 /**
  * QMP事件
  */
-@Serializable
+@kotlinx.serialization.Serializable
 data class QmpEvent(
     val event: String? = null,
     val data: Map<String, JsonElement>? = null,
@@ -995,7 +996,7 @@ data class QmpEvent(
 /**
  * QMP时间戳
  */
-@Serializable
+@kotlinx.serialization.Serializable
 data class QmpTimestamp(
     val seconds: Long? = null,
     val microseconds: Int? = null
@@ -1004,7 +1005,7 @@ data class QmpTimestamp(
 /**
  * QMP错误响应
  */
-@Serializable
+@kotlinx.serialization.Serializable
 data class QmpError(
     val error: QmpErrorDetail? = null
 )
@@ -1012,7 +1013,7 @@ data class QmpError(
 /**
  * QMP错误详情
  */
-@Serializable
+@kotlinx.serialization.Serializable
 data class QmpErrorDetail(
     val `class`: String? = null,
     val desc: String? = null

@@ -173,8 +173,14 @@ class QemuProcessManagerImpl(
                 val javaProcess = processBuilder.start()
                 val handle = QemuProcessHandle.from(javaProcess, process)
 
-                // 更新进程信息
-                val runningProcess = process.withPid(javaProcess.pid())
+                // 更新进程信息 - 使用反射获取PID以兼容Android
+                val pid = try {
+                    val method = Process::class.java.getMethod("pid")
+                    method.invoke(javaProcess) as Long
+                } catch (e: Exception) {
+                    -1L
+                }
+                val runningProcess = process.withPid(pid)
                 processes[processId] = runningProcess
                 handles[processId] = handle
 
