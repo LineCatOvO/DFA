@@ -36,7 +36,7 @@ class QemuConfigTest {
         assertThat(diskConfig.path).isEqualTo("/tmp/disk.qcow2")
         assertThat(diskConfig.format).isEqualTo(QemuDiskFormat.QCOW2)
         assertThat(diskConfig.sizeGb).isEqualTo(10)
-        assertThat(diskConfig.interface).isEqualTo("virtio")
+        assertThat(diskConfig.`interface`).isEqualTo("virtio")
         assertThat(diskConfig.cacheMode).isEqualTo("writeback")
         assertThat(diskConfig.readOnly).isFalse()
         assertThat(diskConfig.discard).isFalse()

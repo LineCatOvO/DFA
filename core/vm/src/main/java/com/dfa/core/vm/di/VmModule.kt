@@ -21,6 +21,8 @@ import com.dfa.core.vm.image.ImageDownloaderConfig
 import com.dfa.core.vm.image.ImageDownloaderImpl
 import com.dfa.core.vm.image.ImageManager
 import com.dfa.core.vm.image.ImageManagerImpl
+import com.dfa.core.vm.image.PredefinedImageProvider
+import com.dfa.core.vm.image.PredefinedImageProviderImpl
 import com.dfa.core.vm.protocol.CodecConfig
 import com.dfa.core.vm.protocol.MessageCodec
 import com.dfa.core.vm.protocol.MessageCodecImpl
@@ -165,6 +167,13 @@ abstract class VmModule {
     @Binds
     @Singleton
     abstract fun bindImageManager(impl: ImageManagerImpl): ImageManager
+
+    /**
+     * 绑定PredefinedImageProvider接口到实现
+     */
+    @Binds
+    @Singleton
+    abstract fun bindPredefinedImageProvider(impl: PredefinedImageProviderImpl): PredefinedImageProvider
 
     /**
      * 绑定CommunicationManager接口到实现
