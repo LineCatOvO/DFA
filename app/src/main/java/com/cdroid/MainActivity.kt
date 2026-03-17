@@ -1,4 +1,4 @@
-package com.dfa
+package com.cdroid
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,7 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.dfa.ui.theme.DfaTheme
+import com.cdroid.ui.theme.CdroidTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -21,10 +21,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            DfaTheme {
+            CdroidTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = "DFA",
+                        name = "CDroid",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -46,7 +46,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    DfaTheme {
-        Greeting("DFA")
+    CdroidTheme {
+        Greeting("CDroid")
     }
 }

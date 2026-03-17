@@ -1,6 +1,6 @@
 # 常见问题解答 (FAQ)
 
-本文档收集了 DFA 使用过程中的常见问题及其解答。
+本文档收集了 CDroid 使用过程中的常见问题及其解答。
 
 ---
 
@@ -17,35 +17,37 @@
 
 ## 概念解释
 
-### Q1: 什么是 DFA？
+### Q1: 什么是 CDroid？
 
-**DFA (Docker For Android)** 是一个开源项目，利用 Android 的 AVF（Android Virtualization Framework）框架，在 Android 设备上实现原生 Docker 容器支持。
+**CDroid (Container Dashboard)** 是一个跨平台的容器管理应用，支持连接和管理远程或本地的 Docker、Podman 等容器服务。通过统一的用户界面，提供完整的容器管理功能。
 
-### Q2: 什么是 AVF？
+### Q2: 什么是 Docker Context？
 
-**AVF (Android Virtualization Framework)** 是 Android 13 引入的虚拟化框架，允许在 Android 设备上安全地运行虚拟机。它提供了硬件级别的隔离，确保虚拟机与宿主系统的安全性。
+**Docker Context** 是 Docker 的一个功能，允许用户管理多个 Docker 守护进程（本地和远程）。通过 Context，可以轻松切换不同的 Docker 环境，如本地开发环境、测试环境和生产环境。
 
-### Q3: DFA 与 Termux 中的 Docker 有什么区别？
+### Q3: CDroid 支持哪些容器服务？
 
-| 特性 | DFA | Termux Docker |
-|------|-----|---------------|
-| 虚拟化方式 | AVF 虚拟机 | 容器/模拟 |
-| 性能 | 原生性能 | 模拟性能较低 |
-| 隔离性 | 硬件级隔离 | 软件隔离 |
-| 兼容性 | 完整 Docker | 部分功能受限 |
-| 系统要求 | Android 13+ | Android 7+ |
+CDroid 支持多种容器服务：
 
-### Q4: 什么是 Protected VM？
+| 服务 | 支持状态 | 说明 |
+|------|----------|------|
+| Docker | ✅ 完全支持 | 本地和远程Docker服务 |
+| Podman | ✅ 支持 | 本地和远程Podman服务 |
+| Kubernetes | ⚠️ 计划中 | 未来版本支持 |
 
-**Protected VM (pVM)** 是 AVF 提供的一种安全虚拟机，具有以下特性：
-- 独立的加密内存空间
-- 与宿主系统完全隔离
-- 无法被宿主系统访问或修改
-- 适合运行敏感工作负载
+### Q4: CDroid 与 Docker Desktop 有什么区别？
 
-### Q5: DFA 支持哪些 Docker 功能？
+| 特性 | CDroid | Docker Desktop |
+|------|--------|---------------|
+| 平台支持 | Android/iOS/Web | Windows/Mac/Linux |
+| 远程管理 | ✅ 支持 | ❌ 不支持 |
+| 多Context | ✅ 支持 | ✅ 支持 |
+| 资源占用 | 低 | 较高 |
+| 开源 | ✅ 100%开源 | ❌ 部分开源 |
 
-DFA 支持大部分标准 Docker 功能：
+### Q5: CDroid 支持哪些 Docker 功能？
+
+CDroid 支持大部分标准 Docker 功能：
 
 | 功能 | 支持状态 |
 |------|----------|
@@ -54,57 +56,53 @@ DFA 支持大部分标准 Docker 功能：
 | 网络配置 | ✅ 完全支持 |
 | 数据卷 | ✅ 完全支持 |
 | Docker Compose | ✅ 支持 |
-| 多架构镜像 | ⚠️ 部分支持 |
-| GPU 直通 | ❌ 不支持 |
+| 多架构镜像 | ✅ 完全支持 |
 
 ---
 
 ## 安装问题
 
-### Q6: 我的设备支持 DFA 吗？
+### Q6: 我的设备支持 CDroid 吗？
 
 检查设备兼容性：
 
 ```bash
-# 检查 Android 版本（需要 >= 13）
+# 检查 Android 版本（需要 >= 24）
 adb shell getprop ro.build.version.sdk
 
-# 检查 CPU 架构（需要 arm64-v8a）
+# 检查 CPU 架构
 adb shell getprop ro.product.cpu.abi
-
-# 检查 KVM 支持
-adb shell ls /dev/kvm
 ```
 
-### Q7: 为什么需要 Android 13+？
+### Q7: 为什么需要 Android 7.0+？
 
-DFA 依赖 AVF 框架，该框架从 Android 13 (API 33) 开始提供。早期 Android 版本不支持 AVF。
+CDroid 依赖 Android 7.0 (API 24) 提供的网络和存储功能。早期 Android 版本不支持必要的 API。
 
 ### Q8: 安装时提示"INSTALL_FAILED_NO_MATCHING_ABIS"怎么办？
 
-这个错误表示设备 CPU 架构不支持。DFA 目前仅支持 ARM64 (aarch64) 架构。
+这个错误表示设备 CPU 架构不支持。CDroid 支持 ARM64 (aarch64) 和 x86_64 架构。
 
 ```bash
 # 检查设备架构
 adb shell getprop ro.product.cpu.abi
-# 应输出 arm64-v8a
+# 应输出 arm64-v8a 或 x86_64
 ```
 
 ### Q9: 安装后无法启动怎么办？
 
-1. 检查 KVM 支持：
+1. 检查网络连接：
 ```bash
-adb shell ls -la /dev/kvm
+adb shell ping -c 3 8.8.8.8
 ```
 
 2. 检查权限：
 ```bash
-adb shell pm list permissions -g | grep -i virtualization
+adb shell pm list permissions -g | grep -i network
 ```
 
 3. 查看崩溃日志：
 ```bash
-adb logcat -s AndroidRuntime:E | grep -A 20 "com.dfa.app"
+adb logcat -s AndroidRuntime:E | grep -A 20 "com.cdroid.app"
 ```
 
 ---
@@ -115,10 +113,10 @@ adb logcat -s AndroidRuntime:E | grep -A 20 "com.dfa.app"
 
 ```bash
 # 运行 Hello World
-dfa docker run hello-world
+cdroid docker run hello-world
 
 # 运行 Nginx 服务
-dfa docker run -d -p 8080:80 --name my-nginx nginx
+cdroid docker run -d -p 8080:80 --name my-nginx nginx
 
 # 访问服务
 # 在浏览器打开 http://localhost:8080
@@ -126,17 +124,17 @@ dfa docker run -d -p 8080:80 --name my-nginx nginx
 
 ### Q11: 如何访问容器内的服务？
 
-DFA 支持端口映射，将容器端口映射到 Android 设备：
+CDroid 支持端口映射，将容器端口映射到 Android 设备：
 
 ```bash
 # 映射单个端口
-dfa docker run -d -p 8080:80 nginx
+cdroid docker run -d -p 8080:80 nginx
 
 # 映射多个端口
-dfa docker run -d -p 8080:80 -p 8443:443 nginx
+cdroid docker run -d -p 8080:80 -p 8443:443 nginx
 
 # 查看端口映射
-dfa docker port <container-id>
+cdroid docker port <container-id>
 ```
 
 ### Q12: 如何持久化容器数据？
@@ -145,215 +143,273 @@ dfa docker port <container-id>
 
 ```bash
 # 创建数据卷
-dfa docker volume create mydata
+cdroid docker volume create mydata
 
 # 使用数据卷
-dfa docker run -d -v mydata:/data nginx
+cdroid docker run -d -v mydata:/data nginx
 
 # 挂载本地目录
-dfa docker run -d -v /sdcard/DFA/data:/data nginx
+cdroid docker run -d -v /sdcard/CDroid/data:/data nginx
 ```
 
 ### Q13: 如何使用 Docker Compose？
 
 ```bash
 # 安装 Docker Compose
-dfa plugin install docker-compose
+cdroid plugin install docker-compose
 
 # 使用 Compose 文件
-dfa docker-compose up -d
+cdroid docker-compose up -d
 
 # 查看服务状态
-dfa docker-compose ps
+cdroid docker-compose ps
 ```
 
 ### Q14: 如何进入容器终端？
 
 ```bash
 # 进入运行中的容器
-dfa docker exec -it <container-id> /bin/sh
+cdroid docker exec -it <container-id> /bin/sh
 
 # 或使用 bash
-dfa docker exec -it <container-id> /bin/bash
+cdroid docker exec -it <container-id> /bin/bash
 ```
 
 ### Q15: 如何查看容器日志？
 
 ```bash
 # 查看日志
-dfa docker logs <container-id>
+cdroid docker logs <container-id>
 
 # 实时查看日志
-dfa docker logs -f <container-id>
+cdroid docker logs -f <container-id>
 
 # 查看最近 100 行
-dfa docker logs --tail 100 <container-id>
+cdroid docker logs --tail 100 <container-id>
+```
+
+### Q16: 如何切换 Context？
+
+```bash
+# 列出所有 Context
+cdroid context ls
+
+# 切换 Context
+cdroid context use remote
+
+# 查看当前 Context
+cdroid context current
+```
+
+### Q17: 如何配置 Podman？
+
+```bash
+# 创建 Podman Context
+cdroid context create podman-local \
+  --type podman \
+  --endpoint unix:///run/podman/podman.sock
+
+# 切换到 Podman Context
+cdroid context use podman-local
+
+# 使用 Podman 运行容器
+cdroid docker run hello-world
 ```
 
 ---
 
 ## 技术问题
 
-### Q16: Docker 命令响应很慢怎么办？
+### Q18: Docker 命令响应很慢怎么办？
 
 可能原因和解决方案：
 
-1. **资源不足**：增加 VM 资源配置
-```yaml
-vm:
-  memory: 4096
-  cpus: 4
-```
-
-2. **存储性能**：使用更快的存储
-```bash
-# 检查存储性能
-dfa storage benchmark
-```
-
-3. **网络延迟**：使用本地镜像仓库
+1. **网络延迟**：使用本地镜像仓库
 ```bash
 # 配置镜像加速
-dfa config set registry.mirror https://mirror.example.com
+cdroid config set registry.mirror https://mirror.example.com
 ```
 
-### Q17: 容器无法访问网络怎么办？
+2. **远程服务延迟**：切换到本地Context
+```bash
+cdroid context use local
+```
+
+3. **连接超时**：增加超时时间
+```yaml
+# config.yaml
+docker:
+  timeout: 60
+```
+
+### Q19: 容器无法访问网络怎么办？
 
 ```bash
 # 检查网络配置
-dfa docker network ls
+cdroid docker network ls
 
 # 测试网络连接
-dfa docker run --rm alpine ping -c 3 8.8.8.8
+cdroid docker run --rm alpine ping -c 3 8.8.8.8
 
 # 检查 DNS
-dfa docker run --rm alpine nslookup google.com
+cdroid docker run --rm alpine nslookup google.com
 
 # 使用自定义 DNS
-dfa docker run --dns 8.8.8.8 <image>
+cdroid docker run --dns 8.8.8.8 <image>
 ```
 
-### Q18: 如何调试容器问题？
+### Q20: 如何调试容器问题？
 
 ```bash
 # 查看容器详情
-dfa docker inspect <container-id>
+cdroid docker inspect <container-id>
 
 # 查看容器进程
-dfa docker top <container-id>
+cdroid docker top <container-id>
 
 # 查看资源使用
-dfa docker stats <container-id>
+cdroid docker stats <container-id>
 
 # 导出容器日志
-dfa docker logs <container-id> > container.log
+cdroid docker logs <container-id> > container.log
 ```
 
-### Q19: 如何更新 DFA？
+### Q21: 如何更新 CDroid？
 
 ```bash
 # 检查更新
-dfa update check
+cdroid update check
 
 # 更新到最新版本
-dfa update install
+cdroid update install
 
 # 或手动更新
-adb install -r dfa-new.apk
+adb install -r cdroid-new.apk
 ```
 
-### Q20: 如何备份和恢复？
+### Q22: 如何备份和恢复？
 
 ```bash
 # 备份配置
-dfa config export > dfa-config.yaml
+cdroid config export > cdroid-config.yaml
 
-# 备份数据卷
-dfa volume backup mydata > mydata.tar.gz
+# 备份 Context
+cdroid context export > contexts.yaml
 
 # 恢复配置
-dfa config import < dfa-config.yaml
+cdroid config import < cdroid-config.yaml
 
-# 恢复数据卷
-dfa volume restore mydata < mydata.tar.gz
+# 恢复 Context
+cdroid context import < contexts.yaml
+```
+
+### Q23: 连接超时怎么办？
+
+```bash
+# 检查网络连接
+ping <remote-host>
+
+# 检查端口开放
+telnet <remote-host> 2376
+
+# 检查 TLS 配置
+cdroid context inspect remote
+
+# 测试连接
+cdroid docker ps
+```
+
+### Q24: 如何验证连接？
+
+```bash
+# 检查 Context 状态
+cdroid context ls
+
+# 测试 Docker 连接
+cdroid docker info
+
+# 运行测试容器
+cdroid docker run --rm hello-world
+
+# 检查网络延迟
+cdroid docker run --rm alpine ping -c 5 8.8.8.8
 ```
 
 ---
 
 ## 性能问题
 
-### Q21: DFA 的性能如何？
+### Q25: CDroid 的性能如何？
 
-性能取决于设备硬件和配置：
+性能取决于网络连接和容器服务配置：
 
 | 配置 | 容器启动时间 | 网络吞吐量 |
 |------|--------------|------------|
-| 低配 (2GB/1CPU) | 5-10秒 | ~100Mbps |
-| 中配 (4GB/2CPU) | 2-5秒 | ~500Mbps |
-| 高配 (8GB/4CPU) | 1-2秒 | ~1Gbps |
+| 本地Docker | 1-3秒 | ~1Gbps |
+| 远程Docker (LAN) | 2-5秒 | ~500Mbps |
+| 远程Docker (WAN) | 5-10秒 | ~100Mbps |
 
-### Q22: 如何优化 DFA 性能？
+### Q26: 如何优化 CDroid 性能？
 
-1. **增加资源**：
-```yaml
-vm:
-  memory: 4096
-  cpus: 4
-  storage: 20
+1. **使用本地服务**：
+```bash
+cdroid context use local
 ```
 
 2. **使用镜像缓存**：
 ```bash
 # 预拉取常用镜像
-dfa docker pull nginx:alpine
-dfa docker pull redis:alpine
+cdroid docker pull nginx:alpine
+cdroid docker pull redis:alpine
 ```
 
-3. **优化存储**：
+3. **优化网络**：
 ```bash
-# 清理未使用资源
-dfa docker system prune -a
+# 使用有线网络而非Wi-Fi
+# 配置DNS加速
+cdroid config set dns 8.8.8.8,8.8.4.4
 ```
 
-### Q23: 内存不足怎么办？
+### Q27: 网络延迟高怎么办？
 
 ```bash
-# 检查内存使用
-dfa stats memory
+# 检查网络延迟
+ping <remote-host>
 
-# 降低 VM 内存
-dfa config set vm.memory 1024
+# 使用更近的服务
+cdroid context create local-server \
+  --docker "tcp://192.168.1.100:2376"
 
-# 限制容器内存
-dfa docker run --memory="256m" <image>
+# 启用压缩
+cdroid config set compression true
 ```
 
-### Q24: 存储空间不足怎么办？
+### Q28: 存储空间不足怎么办？
 
 ```bash
 # 检查存储使用
-dfa docker system df
+cdroid docker system df
 
 # 清理未使用资源
-dfa docker system prune -a
+cdroid docker system prune -a
 
 # 清理镜像缓存
-dfa docker image prune -a
+cdroid docker image prune -a
 
 # 清理数据卷
-dfa docker volume prune
+cdroid docker volume prune
 ```
 
 ---
 
 ## 安全相关
 
-### Q25: DFA 安全吗？
+### Q25: CDroid 安全吗？
 
-DFA 采用多层安全机制：
+CDroid 采用多层安全机制：
 
-1. **AVF 隔离**：虚拟机与宿主系统隔离
-2. **Protected VM**：硬件级别的安全隔离
+1. **Context 隔离**：不同的 Docker Context 相互隔离
+2. **TLS 加密**：远程连接使用 TLS 加密传输
 3. **容器安全**：Docker 原生安全特性
 4. **权限控制**：细粒度的权限管理
 
@@ -361,42 +417,42 @@ DFA 采用多层安全机制：
 
 ```bash
 # 以非 root 用户运行
-dfa docker run --user 1000:1000 <image>
+cdroid docker run --user 1000:1000 <image>
 
 # 限制容器能力
-dfa docker run --cap-drop ALL <image>
+cdroid docker run --cap-drop ALL <image>
 
 # 只读根文件系统
-dfa docker run --read-only <image>
+cdroid docker run --read-only <image>
 
 # 使用安全配置
-dfa docker run --security-opt no-new-privileges <image>
+cdroid docker run --security-opt no-new-privileges <image>
 ```
 
 ### Q27: 如何管理敏感数据？
 
 ```bash
 # 使用 Docker Secrets
-dfa docker secret create my_secret secret.txt
+cdroid docker secret create my_secret secret.txt
 
 # 使用 Config
-dfa docker config create my_config config.yaml
+cdroid docker config create my_config config.yaml
 
 # 使用环境变量（不推荐敏感数据）
-dfa docker run -e API_KEY=xxx <image>
+cdroid docker run -e API_KEY=xxx <image>
 ```
 
 ### Q28: 如何审计容器活动？
 
 ```bash
 # 启用审计日志
-dfa config set audit.enabled true
+cdroid config set audit.enabled true
 
 # 查看审计日志
-dfa audit logs
+cdroid audit logs
 
 # 导出审计报告
-dfa audit export > audit-report.json
+cdroid audit export > audit-report.json
 ```
 
 ---

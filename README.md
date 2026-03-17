@@ -1,39 +1,40 @@
-# DFA - Docker For Android
+# CDroid - Container Dashboard
 
-一个用于在Android设备上管理Docker容器的应用程序。
+一个用于管理Docker、Podman等容器服务的通用管理面板。
 
 ## 项目概述
 
-DFA是一个Android应用，允许用户在移动设备上管理和监控Docker容器。通过集成虚拟机技术和Docker API，提供完整的容器管理功能。
+CDroid是一个跨平台的容器管理应用，支持连接和管理远程或本地的Docker、Podman等容器服务。通过统一的用户界面，提供完整的容器管理功能。
 
 ## 技术栈
 
 - **开发语言**: Kotlin
-- **最低SDK**: API 33 (Android 13)
+- **最低SDK**: API 24 (Android 7.0)
 - **目标SDK**: API 34 (Android 14)
 - **UI框架**: Jetpack Compose
 - **构建工具**: Gradle 8.x + KTS
 - **依赖注入**: Hilt
 - **架构模式**: MVVM + Clean Architecture
+- **容器API**: Docker Context API、Podman API
 
 ## 项目结构
 
 ```
-DFA/
+CDroid/
 ├── app/                          # 主应用模块
 │   ├── src/
 │   │   ├── main/
-│   │   │   ├── java/com/dfa/
+│   │   │   ├── java/com/cdroid/
 │   │   │   │   ├── MainActivity.kt
-│   │   │   │   ├── DfaApplication.kt
+│   │   │   │   ├── CdroidApplication.kt
 │   │   │   │   └── ui/
 │   │   │   ├── res/
 │   │   │   └── AndroidManifest.xml
 │   │   └── test/
 │   └── build.gradle.kts
 ├── core/                         # 核心模块
-│   ├── vm/                       # 虚拟机管理
-│   ├── docker/                   # Docker集成
+│   ├── context/                  # Docker Context管理
+│   ├── provider/                 # 容器服务提供者（Docker、Podman）
 │   └── common/                   # 公共组件
 ├── build.gradle.kts              # 根构建文件
 ├── settings.gradle.kts           # 项目设置
@@ -50,6 +51,7 @@ DFA/
 - **Android Studio**: Hedgehog (2023.1.1) 或更高版本
 - **Android SDK**: API 34
 - **Gradle**: 8.x (通过Gradle Wrapper自动管理)
+- **容器服务**: Docker 或 Podman（远程或本地）
 
 ### 环境配置步骤
 
@@ -82,13 +84,13 @@ DFA/
 4. **克隆项目**
    ```bash
    git clone <repository-url>
-   cd DFA
+   cd CDroid
    ```
 
 5. **同步项目**
    - 打开Android Studio
    - 选择 "Open an Existing Project"
-   - 选择DFA项目目录
+   - 选择CDroid项目目录
    - 等待Gradle同步完成
 
 ### 构建项目
@@ -135,11 +137,11 @@ DFA/
 ### app模块
 主应用模块，包含UI层和应用入口。
 
-### core:vm模块
-虚拟机管理模块，负责虚拟机的创建、配置和生命周期管理。
+### core:context模块
+Docker Context管理模块，负责Context的配置、切换和管理。
 
-### core:docker模块
-Docker集成模块，提供Docker API的封装和容器操作功能。
+### core:provider模块
+容器服务提供者模块，提供Docker和Podman的API封装和操作功能。
 
 ### core:common模块
 公共组件模块，包含工具类、扩展函数和通用组件。

@@ -1,15 +1,14 @@
 # Docker 集成指南
 
-本文档详细说明 DFA 如何在 AVF 虚拟机中集成 Docker，以及相关的配置和使用方法。
+本文档详细说明 CDroid 如何通过 Docker Context API 连接和管理 Docker 服务。
 
 ---
 
 ## 目录
 
 - [概述](#概述)
-- [Docker on AVF 架构](#docker-on-avf-架构)
-- [内核配置要求](#内核配置要求)
-- [Docker 安装](#docker-安装)
+- [Docker Context 架构](#docker-context-架构)
+- [Context 配置](#context-配置)
 - [容器管理](#容器管理)
 - [网络配置](#网络配置)
 - [存储配置](#存储配置)
@@ -19,60 +18,61 @@
 
 ## 概述
 
-DFA 通过在 AVF 虚拟机中运行完整的 Docker 引擎，实现 Android 设备上的原生 Docker 支持。
+CDroid 通过 Docker Context API 连接和管理 Docker 服务，支持本地和远程 Docker 服务。
 
 ```mermaid
 graph TB
-    subgraph "Android 设备"
-        A[DFA App]
-        B[AVF 虚拟机]
-        C[Docker Engine]
-        D[Containers]
+    subgraph "CDroid App"
+        A[CDroid App]
+        B[Context Manager]
+        C[Docker Provider]
     end
     
-    A -->|管理| B
-    B -->|运行| C
-    C -->|管理| D
-    
-    subgraph "通信层"
-        E[VirtIO 通道]
-        F[gRPC/Socket]
+    subgraph "Docker 服务"
+        D[Local Docker]
+        E[Remote Docker]
+        F[Docker Cloud]
     end
     
-    A --> E
-    E --> F
-    F --> C
+    A --> B
+    B --> C
+    C -->|Context API| D
+    C -->|Context API| E
+    C -->|Context API| F
 ```
 
 ### 核心优势
 
 | 优势 | 说明 |
 |------|------|
-| 原生兼容 | 支持标准 Docker 镜像和命令 |
-| 安全隔离 | 容器运行在隔离的虚拟机中 |
-| 资源控制 | 精确的资源分配和限制 |
-| 网络灵活 | 支持多种网络模式 |
-| 持久化存储 | 支持数据卷和持久化 |
+| 远程管理 | 支持连接远程Docker服务 |
+| 多Context | 支持管理多个Docker Context |
+| 标准API | 使用标准Docker API |
+| 安全连接 | 支持TLS加密连接 |
+| 跨平台 | 支持多种平台 |
 
 ---
 
-## Docker on AVF 架构
+## Docker Context 架构
 
 ### 整体架构
 
 ```mermaid
 graph TB
-    subgraph "Android 层"
-        A[DFA App]
-        B[Docker CLI Bridge]
-        C[Image Manager]
+    subgraph "CDroid 层"
+        A[CDroid App]
+        B[Context Manager]
+        C[Docker Provider]
     end
     
-    subgraph "AVF 虚拟机层"
-        D[Microdroid OS]
-        E[Docker Daemon]
-        F[Containerd]
-        G[runc]
+    subgraph "Docker Context 层"
+        D[Context API]
+        E[Docker CLI]
+    end
+    
+    subgraph "容器服务层"
+        F[Local Docker Daemon]
+        G[Remote Docker Daemon]
     end
     
     subgraph "容器层"
@@ -81,224 +81,110 @@ graph TB
         J[Container N]
     end
     
-    subgraph "存储层"
-        K[镜像存储]
-        L[卷存储]
-    end
-    
     A --> B
-    A --> C
-    B -->|VirtIO| E
-    C -->|VirtIO| K
+    B --> C
+    C --> D
+    D --> E
     
-    E --> F
-    F --> G
-    G --> H
-    G --> I
+    E -->|Unix Socket| F
+    E -->|TCP/TLS| G
+    
+    F --> H
+    F --> I
     G --> J
-    
-    E --> K
-    E --> L
 ```
 
 ### 组件说明
 
 | 组件 | 位置 | 职责 |
 |------|------|------|
-| DFA App | Android | 用户界面和核心逻辑 |
-| Docker CLI Bridge | Android | Docker 命令桥接 |
-| Image Manager | Android | 镜像管理 |
-| Microdroid OS | VM | 轻量级 Linux 系统 |
-| Docker Daemon | VM | Docker 主进程 |
-| Containerd | VM | 容器运行时 |
-| runc | VM | OCI 运行时 |
+| CDroid App | Android | 用户界面和核心逻辑 |
+| Context Manager | Android | Context管理 |
+| Docker Provider | Android | Docker API封装 |
+| Context API | Docker CLI | Context管理API |
+| Docker Daemon | 服务端 | Docker主进程 |
 
 ### 通信机制
 
 ```mermaid
 sequenceDiagram
-    participant App as DFA App
-    participant Bridge as CLI Bridge
-    participant VirtIO as VirtIO Channel
-    participant Docker as Docker Daemon
+    participant App as CDroid App
+    participant CM as Context Manager
+    participant DP as Docker Provider
+    participant API as Docker API
     
-    App->>Bridge: docker run nginx
-    Bridge->>Bridge: 解析命令
-    Bridge->>VirtIO: 发送请求
-    VirtIO->>Docker: API 调用
-    Docker->>Docker: 创建容器
-    Docker-->>VirtIO: 返回结果
-    VirtIO-->>Bridge: 返回响应
-    Bridge-->>App: 显示输出
+    App->>CM: switchContext("docker-remote")
+    CM->>DP: getProvider("docker-remote")
+    DP->>API: 连接远程Docker
+    API-->>DP: 连接成功
+    DP-->>CM: 返回Provider实例
+    CM-->>App: Context切换完成
+    
+    App->>DP: docker run nginx
+    DP->>API: POST /containers/create
+    API->>API: 创建容器
+    API-->>DP: 容器ID
+    DP-->>App: 显示输出
 ```
 
 ---
 
-## 内核配置要求
+## Context 配置
 
-### 必需的内核特性
-
-```bash
-# Docker 运行所需的内核配置
-CONFIG_NAMESPACES=y
-CONFIG_NET_NS=y
-CONFIG_PID_NS=y
-CONFIG_IPC_NS=y
-CONFIG_UTS_NS=y
-CONFIG_CGROUPS=y
-CONFIG_CGROUP_CPUACCT=y
-CONFIG_CGROUP_DEVICE=y
-CONFIG_CGROUP_FREEZER=y
-CONFIG_CGROUP_SCHED=y
-CONFIG_CPUSETS=y
-CONFIG_MEMCG=y
-CONFIG_KEYS=y
-CONFIG_VETH=y
-CONFIG_BRIDGE=y
-CONFIG_BRIDGE_NETFILTER=y
-CONFIG_NF_NAT_IPV4=y
-CONFIG_IP_NF_FILTER=y
-CONFIG_IP_NF_TARGET_MASQUERADE=y
-CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=y
-CONFIG_NETFILTER_XT_MATCH_CONNTRACK=y
-CONFIG_NETFILTER_XT_MATCH_IPVS=y
-CONFIG_IP_NF_NAT=y
-CONFIG_NF_NAT=y
-CONFIG_NF_NAT_NEEDED=y
-CONFIG_POSIX_MQUEUE=y
-```
-
-### 存储驱动配置
+### 创建 Context
 
 ```bash
-# OverlayFS (推荐)
-CONFIG_OVERLAY_FS=y
+# 创建本地 Context
+cdroid context create local --docker "unix:///var/run/docker.sock"
 
-# 或 Device Mapper
-CONFIG_BLK_DEV_DM=y
-CONFIG_DM_THIN_PROVISIONING=y
+# 创建远程 Context
+cdroid context create remote --docker "tcp://192.168.1.100:2376" --tls
 
-# 或 Btrfs
-CONFIG_BTRFS_FS=y
+# 创建云端 Context
+cdroid context create cloud --docker "tcp://cloud.docker.com:2376" --tls
 ```
 
-### 网络配置
+### Context 配置文件
+
+```yaml
+# ~/.cdroid/contexts.yaml
+contexts:
+  local:
+    name: local
+    type: docker
+    endpoint: unix:///var/run/docker.sock
+    tls: false
+  
+  remote:
+    name: remote
+    type: docker
+    endpoint: tcp://192.168.1.100:2376
+    tls:
+      cert: /path/to/cert.pem
+      key: /path/to/key.pem
+      ca: /path/to/ca.pem
+  
+  cloud:
+    name: cloud
+    type: docker
+    endpoint: tcp://cloud.docker.com:2376
+    tls: true
+```
+
+### 切换 Context
 
 ```bash
-# 网络相关配置
-CONFIG_NET=y
-CONFIG_INET=y
-CONFIG_NETFILTER=y
-CONFIG_NF_CONNTRACK=y
-CONFIG_NF_CONNTRACK_IPV4=y
-CONFIG_NF_NAT_IPV4=y
-CONFIG_BRIDGE_NETFILTER=y
-CONFIG_IP_NF_IPTABLES=y
-CONFIG_IP_NF_FILTER=y
-CONFIG_IP_NF_NAT=y
-CONFIG_IP_NF_TARGET_MASQUERADE=y
-```
+# 列出所有 Context
+cdroid context ls
 
-### 验证内核配置
+# 切换 Context
+cdroid context use remote
 
-```bash
-# 在 VM 中检查内核配置
-zcat /proc/config.gz | grep -E "CONFIG_(NAMESPACES|CGROUPS|OVERLAY_FS)="
+# 查看当前 Context
+cdroid context current
 
-# 检查必需的内核模块
-lsmod | grep -E "overlay|bridge|nf_nat"
-```
-
----
-
-## Docker 安装
-
-### VM 镜像构建
-
-```dockerfile
-# Dockerfile for Microdroid with Docker
-FROM microdroid:latest
-
-# 安装依赖
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    curl \
-    gnupg \
-    lsb-release
-
-# 添加 Docker 官方 GPG 密钥
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
-# 添加 Docker 仓库
-RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-# 安装 Docker
-RUN apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io
-
-# 配置 Docker
-COPY daemon.json /etc/docker/daemon.json
-
-# 启动脚本
-COPY start-docker.sh /start-docker.sh
-RUN chmod +x /start-docker.sh
-
-CMD ["/start-docker.sh"]
-```
-
-### Docker 配置文件
-
-```json
-// /etc/docker/daemon.json
-{
-  "storage-driver": "overlay2",
-  "log-driver": "json-file",
-  "log-opts": {
-    "max-size": "10m",
-    "max-file": "3"
-  },
-  "default-ulimits": {
-    "nofile": {
-      "Name": "nofile",
-      "Hard": 65536,
-      "Soft": 65536
-    }
-  },
-  "live-restore": true,
-  "userland-proxy": false,
-  "bip": "172.17.0.1/16",
-  "default-address-pools": [
-    {
-      "base": "172.17.0.0/16",
-      "size": 24
-    }
-  ]
-}
-```
-
-### 启动脚本
-
-```bash
-#!/bin/bash
-# start-docker.sh
-
-# 启动 containerd
-containerd &
-
-# 等待 containerd 就绪
-sleep 2
-
-# 启动 Docker Daemon
-dockerd --config-file=/etc/docker/daemon.json &
-
-# 等待 Docker 就绪
-while ! docker info > /dev/null 2>&1; do
-    sleep 1
-done
-
-echo "Docker is ready"
-
-# 保持容器运行
-tail -f /dev/null
+# 删除 Context
+cdroid context rm remote
 ```
 
 ---
@@ -309,41 +195,41 @@ tail -f /dev/null
 
 ```bash
 # 列出容器
-dfa docker ps -a
+cdroid docker ps -a
 
 # 创建容器
-dfa docker create --name myapp nginx:latest
+cdroid docker create --name myapp nginx:latest
 
 # 启动容器
-dfa docker start myapp
+cdroid docker start myapp
 
 # 停止容器
-dfa docker stop myapp
+cdroid docker stop myapp
 
 # 删除容器
-dfa docker rm myapp
+cdroid docker rm myapp
 
 # 查看日志
-dfa docker logs myapp
+cdroid docker logs myapp
 
 # 进入容器
-dfa docker exec -it myapp /bin/bash
+cdroid docker exec -it myapp /bin/bash
 ```
 
 ### 容器资源限制
 
 ```bash
 # 内存限制
-dfa docker run -d --memory="512m" --memory-swap="1g" nginx
+cdroid docker run -d --memory="512m" --memory-swap="1g" nginx
 
 # CPU 限制
-dfa docker run -d --cpus="1.5" --cpu-shares=512 nginx
+cdroid docker run -d --cpus="1.5" --cpu-shares=512 nginx
 
 # 存储限制
-dfa docker run -d --storage-opt size=10g nginx
+cdroid docker run -d --storage-opt size=10g nginx
 
 # 综合限制
-dfa docker run -d \
+cdroid docker run -d \
     --name limited-container \
     --memory="256m" \
     --cpus="0.5" \
@@ -389,41 +275,41 @@ graph TB
 
 ```bash
 # 创建自定义 bridge 网络
-dfa docker network create --driver bridge mynet
+cdroid docker network create --driver bridge mynet
 
 # 使用自定义网络运行容器
-dfa docker run -d --network mynet --name web nginx
+cdroid docker run -d --network mynet --name web nginx
 
 # 连接容器到网络
-dfa docker network connect mynet existing-container
+cdroid docker network connect mynet existing-container
 ```
 
 ### 端口映射
 
 ```bash
 # 映射单个端口
-dfa docker run -d -p 8080:80 nginx
+cdroid docker run -d -p 8080:80 nginx
 
 # 映射多个端口
-dfa docker run -d -p 8080:80 -p 8443:443 nginx
+cdroid docker run -d -p 8080:80 -p 8443:443 nginx
 
 # 指定 IP 映射
-dfa docker run -d -p 127.0.0.1:8080:80 nginx
+cdroid docker run -d -p 127.0.0.1:8080:80 nginx
 
 # 映射 UDP 端口
-dfa docker run -d -p 53:53/udp dns-server
+cdroid docker run -d -p 53:53/udp dns-server
 ```
 
 ### 网络架构
 
 ```mermaid
 graph TB
-    subgraph "Android 设备"
-        A[DFA App]
+    subgraph "CDroid App"
+        A[CDroid App]
         B[端口转发]
     end
     
-    subgraph "VM 网络"
+    subgraph "Docker 网络"
         C[eth0]
         D[docker0 bridge]
         E[Container 1]
@@ -441,13 +327,13 @@ graph TB
 
 ```bash
 # 自定义 DNS 服务器
-dfa docker run -d --dns 8.8.8.8 --dns 8.8.4.4 nginx
+cdroid docker run -d --dns 8.8.8.8 --dns 8.8.4.4 nginx
 
 # 自定义 DNS 搜索域
-dfa docker run -d --dns-search example.com nginx
+cdroid docker run -d --dns-search example.com nginx
 
 # 添加 hosts 条目
-dfa docker run -d --add-host myhost:192.168.1.100 nginx
+cdroid docker run -d --add-host myhost:192.168.1.100 nginx
 ```
 
 ---
@@ -467,29 +353,29 @@ dfa docker run -d --add-host myhost:192.168.1.100 nginx
 
 ```bash
 # 创建数据卷
-dfa docker volume create mydata
+cdroid docker volume create mydata
 
 # 使用数据卷
-dfa docker run -d -v mydata:/data nginx
+cdroid docker run -d -v mydata:/data nginx
 
 # 挂载主机目录
-dfa docker run -d -v /host/path:/container/path nginx
+cdroid docker run -d -v /host/path:/container/path nginx
 
 # 只读挂载
-dfa docker run -d -v mydata:/data:ro nginx
+cdroid docker run -d -v mydata:/data:ro nginx
 
 # 列出数据卷
-dfa docker volume ls
+cdroid docker volume ls
 
 # 删除数据卷
-dfa docker volume rm mydata
+cdroid docker volume rm mydata
 ```
 
 ### 存储架构
 
 ```mermaid
 graph TB
-    subgraph "VM 存储"
+    subgraph "Docker 存储"
         A[Root Filesystem]
         B[Docker Root]
         C[Overlay2 Layers]
@@ -560,16 +446,16 @@ graph TB
 
 ```bash
 # 查看容器资源使用
-dfa docker stats
+cdroid docker stats
 
 # 查看容器详细信息
-dfa docker inspect container-name
+cdroid docker inspect container-name
 
 # 查看系统信息
-dfa docker system df
+cdroid docker system df
 
 # 清理未使用资源
-dfa docker system prune -a
+cdroid docker system prune -a
 ```
 
 ---
@@ -577,6 +463,5 @@ dfa docker system prune -a
 ## 相关文档
 
 - [架构文档](ARCHITECTURE.md)
-- [AVF 指南](AVF-GUIDE.md)
 - [安装指南](INSTALLATION.md)
 - [故障排除](TROUBLESHOOTING.md)

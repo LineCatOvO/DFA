@@ -1,4 +1,4 @@
-package com.dfa.ui.theme
+package com.cdroid.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -11,25 +11,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = DfaPrimary,
-    secondary = DfaSecondary,
+    primary = CdroidPrimary,
+    secondary = CdroidSecondary,
     tertiary = Pink80,
-    background = DfaBackgroundDark,
-    surface = DfaSurfaceDark,
-    error = DfaError
+    background = CdroidBackgroundDark,
+    surface = CdroidSurfaceDark,
+    error = CdroidError
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = DfaPrimary,
-    secondary = DfaSecondary,
+    primary = CdroidPrimary,
+    secondary = CdroidSecondary,
     tertiary = Pink40,
-    background = DfaBackground,
-    surface = DfaSurface,
-    error = DfaError
+    background = CdroidBackground,
+    surface = CdroidSurface,
+    error = CdroidError
 )
 
 @Composable
-fun DfaTheme(
+fun CdroidTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit

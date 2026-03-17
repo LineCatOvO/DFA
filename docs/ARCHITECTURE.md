@@ -1,14 +1,13 @@
-# DFA 技术架构文档
+# CDroid 技术架构文档
 
-本文档详细描述 DFA（Docker For Android）项目的技术架构设计。
+本文档详细描述 CDroid（Container Dashboard）项目的技术架构设计。
 
 ---
 
 ## 目录
 
 - [概述](#概述)
-- [AVF 架构基础](#avf-架构基础)
-- [DFA 系统架构](#dfa-系统架构)
+- [CDroid 系统架构](#cdroid-系统架构)
 - [核心组件](#核心组件)
 - [数据流](#数据流)
 - [安全架构](#安全架构)
@@ -18,105 +17,50 @@
 
 ## 概述
 
-DFA 利用 Android 的 AVF（Android Virtualization Framework）在 Android 设备上创建隔离的虚拟机环境，并在其中运行 Docker 引擎，从而实现原生 Docker 容器支持。
+CDroid 通过 Docker Context 和容器服务 API 管理远程或本地的 Docker、Podman 等容器服务。通过统一的用户界面，提供跨平台的容器管理能力。
 
 ### 设计目标
 
 | 目标 | 说明 |
 |------|------|
-| 安全隔离 | 容器与宿主系统完全隔离 |
-| 性能优化 | 最小化虚拟化开销 |
+| 跨平台支持 | 支持Android、iOS、Web等多平台 |
+| 多服务支持 | 支持Docker、Podman等多种容器服务 |
+| 远程管理 | 支持连接和管理远程容器服务 |
 | 易用性 | 提供直观的用户界面 |
-| 兼容性 | 支持标准 Docker 镜像和命令 |
 | 可扩展 | 支持插件和扩展机制 |
 
 ---
 
-## AVF 架构基础
-
-### 什么是 AVF
-
-Android Virtualization Framework (AVF) 是 Android 13 引入的虚拟化框架，允许在 Android 设备上运行受保护的虚拟机。
-
-```mermaid
-graph TB
-    subgraph "Android 系统"
-        A[Android Framework] --> B[AVF Service]
-        B --> C[Virtualization Service]
-        C --> D[Hypervisor]
-        D --> E[Protected VM]
-        D --> F[Non-Protected VM]
-    end
-    
-    subgraph "硬件层"
-        G[ARM CPU] --> H[KVM]
-        H --> D
-    end
-```
-
-### AVF 核心概念
-
-| 概念 | 说明 |
-|------|------|
-| Protected VM (pVM) | 受保护的虚拟机，与宿主系统隔离 |
-| Non-Protected VM | 非保护虚拟机，性能更高但隔离性较弱 |
-| Hypervisor | 管理虚拟机的软件层 |
-| Crosvm | Chrome OS 的虚拟机监视器，AVF 使用其变体 |
-| VirtIO | 虚拟设备接口标准 |
-
-### AVF 组件
-
-```mermaid
-graph LR
-    subgraph "AVF 组件"
-        A[android.system.virtualizationservice]
-        B[android.system.virtualmachine]
-        C[virtmgr]
-        D[crosvm]
-    end
-    
-    A --> B
-    B --> C
-    C --> D
-```
-
----
-
-## DFA 系统架构
+## CDroid 系统架构
 
 ### 整体架构
 
 ```mermaid
 graph TB
     subgraph "用户层"
-        A[GUI 应用]
-        B[CLI 工具]
-        C[Web 控制台]
+        A[Android App]
+        B[iOS App]
+        C[Web Console]
     end
     
-    subgraph "DFA 核心层"
-        D[DFA Service]
-        E[VM Manager]
-        F[Docker Bridge]
+    subgraph "CDroid 核心层"
+        D[Context Manager]
+        E[Docker Provider]
+        F[Podman Provider]
         G[Image Manager]
         H[Network Manager]
     end
     
-    subgraph "AVF 层"
-        I[Virtualization Service]
-        J[VM Instance]
-    end
-    
-    subgraph "容器层"
-        K[Docker Engine]
-        L[Container Runtime]
-        M[Containers]
+    subgraph "容器服务层"
+        I[Docker Context API]
+        J[Podman API]
+        K[Remote Docker Service]
+        L[Local Docker Service]
     end
     
     subgraph "存储层"
-        N[Image Storage]
-        O[Volume Storage]
-        P[Config Storage]
+        M[Config Storage]
+        N[Cache Storage]
     end
     
     A --> D
@@ -129,102 +73,98 @@ graph TB
     D --> H
     
     E --> I
-    I --> J
-    J --> K
+    F --> J
+    I --> K
+    I --> L
     
-    K --> L
-    L --> M
-    
+    D --> M
     G --> N
-    F --> O
-    D --> P
 ```
 
 ### 架构层次
 
 | 层次 | 组件 | 职责 |
 |------|------|------|
-| 用户层 | GUI/CLI/Web | 用户交互界面 |
-| 核心层 | DFA Service | 核心业务逻辑 |
-| 虚拟化层 | AVF | 虚拟机管理 |
-| 容器层 | Docker | 容器运行时 |
+| 用户层 | Android/iOS/Web | 用户交互界面 |
+| 核心层 | CDroid Service | 核心业务逻辑 |
+| 服务层 | Docker/Podman API | 容器服务接口 |
 | 存储层 | Storage | 数据持久化 |
 
 ---
 
 ## 核心组件
 
-### 1. DFA Service
+### 1. Context Manager
 
-DFA 的核心服务，负责协调各组件工作。
+Context Manager负责管理Docker Context的配置、切换和连接。
 
-```java
-// DFA Service 核心接口
-public interface DfaService {
+```kotlin
+// Context Manager 核心接口
+interface ContextManager {
     // 生命周期管理
-    void initialize(Context context);
-    void start();
-    void stop();
+    suspend fun initialize(context: Context)
+    suspend fun start()
+    suspend fun stop()
     
-    // VM 管理
-    VmInstance createVm(VmConfig config);
-    void destroyVm(VmInstance vm);
+    // Context 管理
+    suspend fun createContext(config: ContextConfig): Context
+    suspend fun destroyContext(contextId: String)
+    suspend fun switchContext(contextId: String)
+    suspend fun listContexts(): List<Context>
     
-    // Docker 操作
-    DockerClient getDockerClient();
+    // Provider 管理
+    suspend fun getProvider(contextId: String): ContainerProvider
 }
 ```
 
-### 2. VM Manager
+### 2. Docker Provider
 
-管理虚拟机的创建、启动、停止和销毁。
+Docker Provider提供Docker服务的API封装和操作功能。
 
 ```mermaid
 sequenceDiagram
-    participant App as DFA App
-    participant VM as VM Manager
-    participant AVF as AVF Service
-    participant VMInst as VM Instance
+    participant App as CDroid App
+    participant CM as Context Manager
+    participant DP as Docker Provider
+    participant API as Docker API
     
-    App->>VM: createVm(config)
-    VM->>AVF: createVirtualMachine(config)
-    AVF->>VMInst: 创建 VM
-    VMInst-->>AVF: VM 就绪
-    AVF-->>VM: VM 实例
-    VM-->>App: 返回 VM 句柄
+    App->>CM: switchContext("docker-local")
+    CM->>DP: getProvider("docker-local")
+    DP->>API: 连接Docker服务
+    API-->>DP: 连接成功
+    DP-->>CM: 返回Provider实例
+    CM-->>App: Context切换完成
     
-    App->>VM: startVm()
-    VM->>AVF: start()
-    AVF->>VMInst: 启动 VM
-    VMInst-->>AVF: 运行中
-    AVF-->>VM: 启动成功
-    VM-->>App: 操作完成
+    App->>DP: listContainers()
+    DP->>API: GET /containers/json
+    API-->>DP: 容器列表
+    DP-->>App: 返回容器信息
 ```
 
-### 3. Docker Bridge
+### 3. Podman Provider
 
-Docker 与 Android 系统的桥接层。
+Podman Provider提供Podman服务的API封装和操作功能。
 
 ```mermaid
 graph LR
-    subgraph "Android"
-        A[DFA App]
-        B[Docker Bridge]
+    subgraph "CDroid"
+        A[Context Manager]
+        B[Podman Provider]
     end
     
-    subgraph "VM"
-        C[Docker Daemon]
-        D[Docker CLI]
+    subgraph "Podman Service"
+        C[Podman API]
+        D[Podman Daemon]
     end
     
-    A -->|gRPC/Socket| B
-    B -->|VirtIO Channel| C
+    A --> B
+    B -->|HTTP/Unix Socket| C
     C --> D
 ```
 
 ### 4. Image Manager
 
-管理 Docker 镜像的拉取、存储和分发。
+管理容器镜像的拉取、存储和分发。
 
 ```mermaid
 graph TB
@@ -273,19 +213,19 @@ graph TB
 ```mermaid
 sequenceDiagram
     participant User as 用户
-    participant App as DFA App
-    participant VM as VM Manager
-    participant Docker as Docker Engine
+    participant App as CDroid App
+    participant CM as Context Manager
+    participant Provider as Container Provider
     participant Container as Container
     
     User->>App: docker run nginx
-    App->>VM: 检查 VM 状态
-    VM-->>App: VM 运行中
-    App->>Docker: 发送创建请求
-    Docker->>Docker: 拉取镜像（如需要）
-    Docker->>Container: 创建容器
-    Container-->>Docker: 容器就绪
-    Docker-->>App: 容器 ID
+    App->>CM: 检查Context状态
+    CM-->>App: Context就绪
+    App->>Provider: 发送创建请求
+    Provider->>Provider: 拉取镜像（如需要）
+    Provider->>Container: 创建容器
+    Container-->>Provider: 容器就绪
+    Provider-->>App: 容器ID
     App-->>User: 显示容器信息
 ```
 
@@ -293,7 +233,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant App as DFA App
+    participant App as CDroid App
     participant IM as Image Manager
     participant Cache as Image Cache
     participant Registry as Docker Registry
@@ -321,14 +261,14 @@ sequenceDiagram
 ```mermaid
 graph TB
     subgraph "安全边界"
-        A[Android 系统]
-        B[AVF 隔离层]
-        C[Protected VM]
-        D[Docker 容器]
+        A[CDroid App]
+        B[Context Manager]
+        C[Container Service]
+        D[Container]
     end
     
-    A -->|硬件隔离| B
-    B -->|虚拟化隔离| C
+    A -->|加密连接| B
+    B -->|认证授权| C
     C -->|容器隔离| D
 ```
 
@@ -336,17 +276,17 @@ graph TB
 
 | 层次 | 机制 | 说明 |
 |------|------|------|
-| 硬件层 | ARM TrustZone | 硬件级安全隔离 |
-| 虚拟化层 | AVF Protected VM | 虚拟机级隔离 |
-| 容器层 | Docker Namespaces | 容器级隔离 |
-| 应用层 | SELinux/AppArmor | 强制访问控制 |
+| 传输层 | TLS/SSL | 加密通信 |
+| 认证层 | Token/Cert | 身份认证 |
+| 授权层 | RBAC | 访问控制 |
+| 容器层 | Namespaces | 容器级隔离 |
 
 ### 安全特性
 
-1. **内存隔离**：虚拟机拥有独立的内存空间
-2. **存储隔离**：容器数据存储在虚拟机磁盘镜像中
-3. **网络隔离**：虚拟机网络与宿主网络隔离
-4. **权限控制**：细粒度的权限管理机制
+1. **加密通信**：所有与容器服务的通信都使用TLS加密
+2. **认证授权**：支持多种认证方式（Token、证书、OAuth）
+3. **权限控制**：细粒度的权限管理机制
+4. **审计日志**：记录所有操作日志
 
 ---
 
@@ -397,7 +337,7 @@ graph LR
 
 ```mermaid
 graph TB
-    A[DFA Core]
+    A[CDroid Core]
     B[Plugin Manager]
     C[Plugin API]
     

@@ -13,7 +13,9 @@
 - 待添加的新功能
 
 ### 变更 (Changed)
-- 待变更的内容
+- 项目从DFA重命名为CDroid
+- 项目定位从AVF容器运行时改为容器服务管理面板
+- 架构从AVF虚拟机改为Docker Context + 容器服务API
 
 ### 修复 (Fixed)
 - 待修复的问题

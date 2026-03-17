@@ -1,7 +1,7 @@
-package com.dfa
+package com.cdroid
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class DfaApplication : Application()
+class CdroidApplication : Application()
